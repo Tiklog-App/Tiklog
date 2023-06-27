@@ -1,0 +1,27 @@
+{
+    "env": {
+      "commonjs": true,
+      "es2021": true,
+      "node": true,
+      "jest": true
+    },
+    "extends": [
+      "eslint:recommended",
+      "plugin:@typescript-eslint/recommended",
+      "plugin:promise/recommended",
+      "plugin:sonarjs/recommended"
+    ],
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+      "ecmaVersion": 12
+    },
+    "plugins": ["@typescript-eslint", "promise", "sonarjs"],
+    "rules": {
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/ban-ts-comment": "off",
+      "@typescript-eslint/no-unused-vars": "off",
+      "prefer-rest-params": "off",
+      "sonarjs/cognitive-complexity": "off"
+    }
+  }
+  
