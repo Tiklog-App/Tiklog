@@ -12,7 +12,7 @@ import Joi from 'joi';
 import Generic from '../utils/Generic';
 import { appEventEmitter } from '../services/AppEventEmitter';
 import { CREATE_ROLE } from '../config/constants';
-import { MANAGE_ALL } from '../config/settings';
+import settings, { MANAGE_ALL } from '../config/settings';
 
 export default class RoleController {
   @TryCatch
@@ -81,6 +81,41 @@ export default class RoleController {
       code: HttpStatus.OK.code,
       message: HttpStatus.OK.value,
       result: role
+    };
+  
+    return Promise.resolve(response);
+    
+  };
+
+  @TryCatch
+  @HasPermission([MANAGE_ALL])
+  public async createManyPermissions(req: Request) {
+    
+    const permissions = settings.permissions;
+
+    for(let i=0; i<permissions.length; i++){
+      
+      const values = {
+        name: permissions[i],
+        action: permissions[i].split("_")[0],
+        subject: permissions[i].split("_")[1],
+        inverted: true
+      }
+
+      const existingPermission = await datasources.permissionDAOService.findByAny({
+        name: permissions[i]
+      });
+      if (existingPermission) {
+        continue;
+      }
+      
+      //@ts-ignore
+      await datasources.permissionDAOService.insertMany(values)
+    }
+
+    const response: HttpResponse<any> = {
+      code: HttpStatus.OK.code,
+      message: "Successfully saved permission."
     };
   
     return Promise.resolve(response);

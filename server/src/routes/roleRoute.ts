@@ -31,3 +31,9 @@ export const getRoleHandler = authenticateRouteWrapper(async (req, res) => {
 
     res.status(response.code).json(response);
 });
+
+export const createPermissionsHandler = authenticateRouteWrapper(async (req, res) => {
+    const response = await roleController.createManyPermissions(req);
+
+    res.status(response.code).json(response);
+});

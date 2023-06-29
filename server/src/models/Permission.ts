@@ -5,7 +5,7 @@ interface IPermission {
   action: string;
   subject: string;
   inverted: boolean;
-  roles?: mongoose.Types.ObjectId[];
+  // roles?: mongoose.Types.ObjectId[];
 }
 
 const permissionSchema = new Schema<IPermission>({
@@ -13,7 +13,7 @@ const permissionSchema = new Schema<IPermission>({
   action: { type: String },
   subject: { type: String },
   inverted: { type: Boolean },
-  roles: [{ type: Schema.Types.ObjectId, ref: 'Role' }],
+  // roles: [{ type: Schema.Types.ObjectId, ref: 'Role' }],
 });
 
 export interface IPermissionModel extends IPermission, Document{}
