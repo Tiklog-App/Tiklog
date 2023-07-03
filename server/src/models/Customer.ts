@@ -65,7 +65,7 @@ const Customer = mongoose.model<ICustomerModel>('Customer', customerSchema);
 
 export const $saveCustomerSchema: Joi.SchemaMap = {
   password: Joi.string()
-    .regex(/^(?=.*\d)(?=.*[a-z])(?=.*\W)(?=.*[A-Z])(?=.*[a-zA-Z]).{8,20}$/)
+    .regex(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[A-Za-z\d]{8,20}$/)
     .messages({
       'string.pattern.base': `Password does not meet requirements.`,
     })
@@ -88,7 +88,7 @@ export const $updateCustomerSchema: Joi.SchemaMap = {
 
 export const $changePassword: Joi.SchemaMap = {
   password: Joi.string()
-    .regex(/^(?=.*\d)(?=.*[a-z])(?=.*\W)(?=.*[A-Z])(?=.*[a-zA-Z]).{8,20}$/)
+    .regex(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[A-Za-z\d]{8,20}$/)
     .messages({
       'string.pattern.base': `Password does not meet requirements.`,
     })
@@ -104,7 +104,7 @@ export const $resetPassword: Joi.SchemaMap = {
 
 export const $savePasswordAfterReset: Joi.SchemaMap = {
   password: Joi.string()
-    .regex(/^(?=.*\d)(?=.*[a-z])(?=.*\W)(?=.*[A-Z])(?=.*[a-zA-Z]).{8,20}$/)
+    .regex(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[A-Za-z\d]{8,20}$/)
     .messages({
       'string.pattern.base': `Password does not meet requirements.`,
     })
@@ -116,7 +116,7 @@ export const $savePasswordAfterReset: Joi.SchemaMap = {
 export const $savePassword: Joi.SchemaMap = {
   email: Joi.string().required().label('email'),
   password: Joi.string()
-    .regex(/^(?=.*\d)(?=.*[a-z])(?=.*\W)(?=.*[A-Z])(?=.*[a-zA-Z]).{8,20}$/)
+    .regex(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[A-Za-z\d]{8,20}$/)
     .messages({
       'string.pattern.base': `Password does not meet requirements.`,
     })
@@ -134,7 +134,7 @@ export const $finishSavingCustomer: Joi.SchemaMap = {
 export const $loginSchema: Joi.SchemaMap = {
     phone: Joi.string().optional().label('phone'),
     password: Joi.string()
-    .regex(/^(?=.*\d)(?=.*[a-z])(?=.*\W)(?=.*[A-Z])(?=.*[a-zA-Z]).{8,20}$/)
+    .regex(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[A-Za-z\d]{8,20}$/)
     .messages({
       'string.pattern.base': `Password does not meet requirements.`,
     })

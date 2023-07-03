@@ -167,11 +167,35 @@ export default class AuthenticationController {
 
         role.users.push(customer._id);
         await role.save();
+
+        const _role = await datasources.roleDAOService.findByIdPopulatePermissions(customer.roles);
+
+        if(!_role) return Promise.reject(CustomAPIError.response('Role is not found', HttpStatus.UNAUTHORIZED.code));
+
+        const permissions: any = [];
         
-        const response: HttpResponse<ICustomerModel> = {
+        for (const _permission of _role.permissions) {
+          permissions.push(_permission)
+        }
+
+        //generate JWT
+        const jwt = Generic.generateJwt({
+          userId: customer.id,
+          permissions
+        });
+
+        //update user authentication date and authentication token
+        const updateValues = {
+          loginDate: new Date(),
+          loginToken: jwt
+        };
+
+        await datasources.customerDAOService.updateByAny({customer}, updateValues);
+        
+        const response: HttpResponse<string> = {
           code: HttpStatus.OK.code,
           message: HttpStatus.OK.value,
-          result: customer,
+          result: jwt,
         };
         
         redisService.deleteRedisKey(customer.phone)
@@ -326,11 +350,35 @@ export default class AuthenticationController {
    
         role.users.push(rider._id);
         await role.save();
+
+        const _role = await datasources.roleDAOService.findByIdPopulatePermissions(rider.roles);
+
+        if(!_role) return Promise.reject(CustomAPIError.response('Role is not found', HttpStatus.UNAUTHORIZED.code));
+
+        const permissions: any = [];
         
-        const response: HttpResponse<IRiderModel> = {
+        for (const _permission of _role.permissions) {
+          permissions.push(_permission)
+        }
+
+        //generate JWT
+        const jwt = Generic.generateJwt({
+          userId: rider.id,
+          permissions
+        });
+
+        //update user authentication date and authentication token
+        const updateValues = {
+          loginDate: new Date(),
+          loginToken: jwt
+        };
+
+        await datasources.riderDAOService.updateByAny({rider}, updateValues);
+        
+        const response: HttpResponse<string> = {
           code: HttpStatus.OK.code,
           message: HttpStatus.OK.value,
-          result: rider,
+          result: jwt,
         };
         
         redisService.deleteRedisKey(rider.phone)

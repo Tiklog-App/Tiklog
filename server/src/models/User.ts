@@ -53,7 +53,7 @@ export const $saveUserSchema: Joi.SchemaMap = {
   phone: Joi.string().required().label('phone'),
   gender: Joi.string().required().label('gender'),
   password: Joi.string()
-    .regex(/^(?=.*\d)(?=.*[a-z])(?=.*\W)(?=.*[A-Z])(?=.*[a-zA-Z]).{8,20}$/)
+    .regex(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[A-Za-z\d]{8,20}$/)
     .messages({
       'string.pattern.base': `Password does not meet requirements.`,
     })
@@ -74,7 +74,7 @@ export const $updateUserSchema: Joi.SchemaMap = {
 export const $loginSchema: Joi.SchemaMap = {
   phone: Joi.string().optional().label('phone'),
   password: Joi.string()
-  .regex(/^(?=.*\d)(?=.*[a-z])(?=.*\W)(?=.*[A-Z])(?=.*[a-zA-Z]).{8,20}$/)
+  .regex(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[A-Za-z\d]{8,20}$/)
   .messages({
     'string.pattern.base': `Password does not meet requirements.`,
   })
@@ -84,7 +84,7 @@ export const $loginSchema: Joi.SchemaMap = {
 
 export const $changePassword: Joi.SchemaMap = {
   password: Joi.string()
-    .regex(/^(?=.*\d)(?=.*[a-z])(?=.*\W)(?=.*[A-Z])(?=.*[a-zA-Z]).{8,20}$/)
+    .regex(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[A-Za-z\d]{8,20}$/)
     .messages({
       'string.pattern.base': `Password does not meet requirements.`,
     })

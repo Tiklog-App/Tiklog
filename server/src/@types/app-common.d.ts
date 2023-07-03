@@ -40,7 +40,7 @@ export declare namespace appCommonTypes {
     | 'SUPER_ADMIN_ROLE'
     | 'ADMIN_ROLE'
     | 'CUSTOMER_ROLE'
-    | 'DRIVER_ROLE'
+    | 'RIDER_ROLE'
   type Permissions =
     | 'manage_all'
     | 'manage_some'

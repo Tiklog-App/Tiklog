@@ -58,7 +58,7 @@ const Rider = mongoose.model<IRiderModel>('Rider', riderSchema);
 
 export const $saveRiderSchema: Joi.SchemaMap = {
   password: Joi.string()
-    .regex(/^(?=.*\d)(?=.*[a-z])(?=.*\W)(?=.*[A-Z])(?=.*[a-zA-Z]).{8,20}$/)
+    .regex(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[A-Za-z\d]{8,20}$/)
     .messages({
       'string.pattern.base': `Password does not meet requirements.`,
     })
@@ -81,7 +81,7 @@ export const $updateRiderSchema: Joi.SchemaMap = {
 
 export const $changePassword: Joi.SchemaMap = {
   password: Joi.string()
-    .regex(/^(?=.*\d)(?=.*[a-z])(?=.*\W)(?=.*[A-Z])(?=.*[a-zA-Z]).{8,20}$/)
+    .regex(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[A-Za-z\d]{8,20}$/)
     .messages({
       'string.pattern.base': `Password does not meet requirements.`,
     })
@@ -97,7 +97,7 @@ export const $resetPassword: Joi.SchemaMap = {
 
 export const $savePasswordAfterReset: Joi.SchemaMap = {
   password: Joi.string()
-    .regex(/^(?=.*\d)(?=.*[a-z])(?=.*\W)(?=.*[A-Z])(?=.*[a-zA-Z]).{8,20}$/)
+    .regex(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[A-Za-z\d]{8,20}$/)
     .messages({
       'string.pattern.base': `Password does not meet requirements.`,
     })
@@ -109,7 +109,7 @@ export const $savePasswordAfterReset: Joi.SchemaMap = {
 export const $savePassword: Joi.SchemaMap = {
   email: Joi.string().required().label('email'),
   password: Joi.string()
-    .regex(/^(?=.*\d)(?=.*[a-z])(?=.*\W)(?=.*[A-Z])(?=.*[a-zA-Z]).{8,20}$/)
+    .regex(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[A-Za-z\d]{8,20}$/)
     .messages({
       'string.pattern.base': `Password does not meet requirements.`,
     })
@@ -127,7 +127,7 @@ export const $finishSavingRider: Joi.SchemaMap = {
 export const $loginSchema: Joi.SchemaMap = {
   phone: Joi.string().required().label('phone'),
   password: Joi.string()
-  .regex(/^(?=.*\d)(?=.*[a-z])(?=.*\W)(?=.*[A-Z])(?=.*[a-zA-Z]).{8,20}$/)
+  .regex(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[A-Za-z\d]{8,20}$/)
   .messages({
     'string.pattern.base': `Password does not meet requirements.`,
   })

@@ -123,7 +123,7 @@ const settings: AppSettings = {
     'SUPER_ADMIN_ROLE',
     'ADMIN_ROLE',
     'CUSTOMER_ROLE',
-    'DRIVER_ROLE'
+    'RIDER_ROLE'
   ],
   queue: {
     development: {
