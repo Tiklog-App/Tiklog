@@ -110,14 +110,14 @@ export default class AuthenticationController {
       const actualData = JSON.stringify(data);
 
       redisService.saveToken(value.phone, actualData, 180);
-      redisService.sendNotification(
-        value.phone,
-        `Your token is: ${token}`
-      )
+      // redisService.sendNotification(
+      //   value.phone,
+      //   `Your token is: ${token}`
+      // )
       
       const response: HttpResponse<any> = {
         code: HttpStatus.OK.code,
-        message: 'Account creation token has been sent to your phone number.'
+        message: `Account creation token has been sent to your phone number. ${token}`
       };
   
       return Promise.resolve(response);
@@ -292,14 +292,14 @@ export default class AuthenticationController {
       const actualData = JSON.stringify(data);
 
       redisService.saveToken(value.phone, actualData, 180);
-      redisService.sendNotification(
-        value.phone,
-        `Your token is: ${token}`
-      )
+      // redisService.sendNotification(
+      //   value.phone,
+      //   `Your token is: ${token}`
+      // )
 
       const response: HttpResponse<any> = {
         code: HttpStatus.OK.code,
-        message: 'Account creation token has been sent to your phone number.'
+        message: `Account creation token has been sent to your phone number. ${token}`
       };
 
       return Promise.resolve(response);

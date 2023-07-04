@@ -240,20 +240,20 @@ export default class DeliveryController {
         const vehicle = await datasources.vehicleDAOService.findByAny({
             rider: rider?._id
         })
-        if(!vehicle)
-            return Promise.reject(CustomAPIError.response('Vehicle does not exist', HttpStatus.NOT_FOUND.code));
 
-        //checks speed and fee based on vehicle selected
         let speedInKmPerHour = 0;
-        if(vehicle?.vehicleType === 'bike') {
-            speedInKmPerHour += BIKE_SPEED
-        } else if(vehicle?.vehicleType === 'car') {
-            speedInKmPerHour += CAR_SPEED
-        } else if(vehicle?.vehicleType === 'bus') {
-            speedInKmPerHour += BUS_SPEED
-        } else {
-            speedInKmPerHour += AVERAGE_SPEED
-        };
+        if(vehicle){
+            //checks speed and fee based on vehicle selected
+            if(vehicle?.vehicleType === 'bike') {
+                speedInKmPerHour += BIKE_SPEED
+            } else if(vehicle?.vehicleType === 'car') {
+                speedInKmPerHour += CAR_SPEED
+            } else if(vehicle?.vehicleType === 'bus') {
+                speedInKmPerHour += BUS_SPEED
+            } else {
+                speedInKmPerHour += AVERAGE_SPEED
+            };
+        }
 
         let estimatedTimeToSender = 0
         riders.forEach(elem => {
@@ -282,7 +282,8 @@ export default class DeliveryController {
             gender: rider.gender
         };
 
-        redisService.saveToken('riderInfo', riderData, 3600)
+        const redisData = JSON.stringify(riderData)
+        redisService.saveToken('riderInfo', redisData, 3600)
 
         let arrivalTime = 0
         if(minutes <= 2) {
@@ -316,18 +317,13 @@ export default class DeliveryController {
     public async packageRequest(req: Request, socket: Socket<any, any, any, any>) {
         await rabbitMqService.connectToRabbitMQ()
 
-        const rider: any = await redisService.getToken('riderInfo');
+        const rider = await redisService.getToken('riderInfo');
+        let packageRequest: any = null
         if(rider) {
-            const { phone, email, firstName } = rider;
-
-            console.log(phone, email, firstName, 'rider info')
-        }
-        const packageRequests = {
-            _id: rider?._id,
-            firstName: rider?.firstName
+            packageRequest = rider
         }
 
-        await rabbitMqService.submitPackageRequest(packageRequests, socket)
+        await rabbitMqService.submitPackageRequest(packageRequest, socket)
     }
 
     @TryCatch

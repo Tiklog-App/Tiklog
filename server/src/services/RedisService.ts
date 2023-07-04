@@ -29,7 +29,6 @@ class RedisService {
   }
 
   public saveToken(keys: string, data: any, expire: number): void {
-    console.log(data, 'data')
     this.redisClient.set(keys, data, 'EX', expire);
   }
 

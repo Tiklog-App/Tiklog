@@ -22,17 +22,7 @@ export const corsOptions = {
   origin: [
     'http://localhost:3000',
     'http://localhost:3002',
-    <string>process.env.CLIENT_HOST,
-    <string>process.env.CLIENT_HOST_WWW,
-    <string>process.env.CLIENT_IP,
-    <string>process.env.CUSTOMER_APP_HOST,
-    <string>process.env.CUSTOMER_APP_HOST_WWW,
-    <string>process.env.CUSTOMER_APP_IP,
-    <string>process.env.WEBSITE_HOST,
-    <string>process.env.WEBSITE_HOST_WWW,
-    <string>process.env.WEBSITE_IP,
-    <string>process.env.PARTNER_HOST,
-    <string>process.env.PARTNER_WWW,
+    <string>process.env.CLIENT_URL
   ],
   credentials: true,
 };

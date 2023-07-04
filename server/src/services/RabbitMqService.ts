@@ -115,26 +115,6 @@ class RabbitMqService {
     }
   }
 
-  // async submitPackageRequest(packageRequest: any, socket: Socket<any, any, any, any>): Promise<void> {
-  //   const exchange = PACKAGE_REQUEST;
-  //   const message = JSON.stringify(packageRequest);
-  //   const expiration = EXPIRATION_AMQP_MESSAGE; // Expiration in milliseconds
-  
-  //   await this.channel!.assertExchange(exchange, 'fanout', { durable: false });
-  //   this.channel!.publish(exchange, '', Buffer.from(message), { expiration });
-
-  //     // Emit the package request event to the server
-  //   socket.emit('packageRequest', packageRequest);
-
-
-  //   // Assign the package request to a driver
-  //   this.assignPackageToDriver(packageRequest);
-  
-  //   // this.pendingRequests.push(request);
-  //   console.log(this.pendingRequests, 'Package request submitted.');
-  // }
-
-
   async submitPackageRequest(packageRequest: any, socket: Socket<any, any, any, any>): Promise<void> {
     const exchange = PACKAGE_REQUEST;
     const message = JSON.stringify(packageRequest);

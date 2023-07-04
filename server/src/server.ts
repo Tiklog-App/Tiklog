@@ -26,6 +26,7 @@ const io = new SocketServer(server, {
 });
 
 io.on('connection', socket => {
+  console.log('Socket connected:', socket.id)
   logger.info(socket.id);
 });
 

@@ -538,9 +538,13 @@ export default class RiderController {
 
         let newStatus;
         if (rider.status === RIDER_STATUS_PENDING) {
-            newStatus = newStatus = RIDER_STATUS_ONLINE;
+            if(!rider.firstName || !rider.lastName || !rider.phone || !rider.email || !rider.gender) {
+                newStatus = RIDER_STATUS_OFFLINE
+            } else {
+                newStatus = RIDER_STATUS_ONLINE
+            }
         } else {
-            return Promise.reject(CustomAPIError.response('Rider is online/offline', HttpStatus.BAD_REQUEST.code));
+            return Promise.reject(CustomAPIError.response('Rider is either online or offline already', HttpStatus.BAD_REQUEST.code));
         }
 
         const updatedRider = await datasources.riderDAOService.updateByAny(
@@ -564,6 +568,8 @@ export default class RiderController {
 
         const rider = await datasources.riderDAOService.findById(riderId);
         if(!rider) return Promise.reject(CustomAPIError.response('rider not found', HttpStatus.BAD_REQUEST.code));
+        if(!rider.firstName || !rider.lastName || !rider.phone || !rider.email || !rider.gender)
+            return Promise.reject(CustomAPIError.response('Please complete your profile', HttpStatus.BAD_REQUEST.code));
 
         let newStatus;
         let updateStatus = false;
@@ -632,18 +638,18 @@ export default class RiderController {
                 const profile_image = files.profileImageUrl as File;
                 const basePath = `${UPLOAD_BASE_PATH}/rider`;
 
-                let _profileImageUrl = ''
+                let _profileImageUrl = '';
                 if(profile_image) {
                     // File size validation
                     const maxSizeInBytes = 1000 * 1024; // 1MB
                     if (profile_image.size > maxSizeInBytes) {
-                        throw CustomAPIError.response('File size exceeds the allowed limit', HttpStatus.BAD_REQUEST.code);
+                        return reject(CustomAPIError.response('Image size exceeds the allowed limit', HttpStatus.BAD_REQUEST.code));
                     }
             
                     // File type validation
                     const allowedFileTypes = ['image/jpeg', 'image/png', 'image/jpg'];
                     if (!allowedFileTypes.includes(profile_image.mimetype as string)) {
-                        throw CustomAPIError.response('Invalid file format. Only JPEG, PNG, and JPG files are allowed', HttpStatus.BAD_REQUEST.code);
+                        return reject(CustomAPIError.response('Invalid image format. Only JPEG, PNG, and JPG images are allowed', HttpStatus.BAD_REQUEST.code));
                     }
             
                     _profileImageUrl = await Generic.getImagePath({

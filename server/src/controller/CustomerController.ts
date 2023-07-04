@@ -442,87 +442,82 @@ export default class CustomerController {
     private async doUpdateCustomer(req: Request): Promise<HttpResponse<ICustomerModel>> {
         return new Promise((resolve, reject) => {
             form.parse(req, async (err, fields, files) => {
-                // try {
-                    const customerId = req.params.customerId;
+                const customerId = req.params.customerId;
 
-                    const { error, value } = Joi.object<ICustomerModel>($updateCustomerSchema).validate(fields);
-                    if(error) return Promise.reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
-                    
-                    const customer = await datasources.customerDAOService.findById(customerId);
-                    if(!customer) return Promise.reject(CustomAPIError.response('Customer not found', HttpStatus.NOT_FOUND.code));
-
-                    const customer_email = await datasources.customerDAOService.findByAny({
-                        email: value.email
-                    });
-
-                    if(value.email && customer.email !== value.email){
-                        if(customer_email) {
-                            return Promise.reject(CustomAPIError.response('Customer with this email already exists', HttpStatus.NOT_FOUND.code))
-                        }
-                    };
-
-                    const customer_phone = await datasources.customerDAOService.findByAny({
-                        phone: value.phone
-                    });
-
-                    if(value.phone && customer.phone !== value.phone){
-                        if(customer_phone) {
-                            return Promise.reject(CustomAPIError.response('Customer with this phone number already exists', HttpStatus.NOT_FOUND.code))
-                        }
-                    };
-
-                    let _email = ''
-                    if(!customer.googleId || !customer.facebookId || !customer.appleId) {
-                        _email = value.email
-                    };
-
-                    let _phone = ''
-                    if(customer.googleId || customer.facebookId || customer.appleId) {
-                        _phone = value.phone
-                    };
-
-                    const profile_image = files.profileImageUrl as File;
-                    const basePath = `${UPLOAD_BASE_PATH}/customer`;
-
-                    let _profileImageUrl = ''
-                    if(profile_image) {
-                        // File size validation
-                        const maxSizeInBytes = 1000 * 1024; // 1MB
-                        if (profile_image.size > maxSizeInBytes) {
-                            throw CustomAPIError.response('File size exceeds the allowed limit', HttpStatus.BAD_REQUEST.code);
-                        }
+                const { error, value } = Joi.object<ICustomerModel>($updateCustomerSchema).validate(fields);
+                if(error) return Promise.reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
                 
-                        // File type validation
-                        const allowedFileTypes = ['image/jpeg', 'image/png', 'image/jpg'];
-                        if (!allowedFileTypes.includes(profile_image.mimetype as string)) {
-                            throw CustomAPIError.response('Invalid file format. Only JPEG, PNG, and JPG files are allowed', HttpStatus.BAD_REQUEST.code);
-                        }
+                const customer = await datasources.customerDAOService.findById(customerId);
+                if(!customer) return Promise.reject(CustomAPIError.response('Customer not found', HttpStatus.NOT_FOUND.code));
+
+                const customer_email = await datasources.customerDAOService.findByAny({
+                    email: value.email
+                });
+
+                if(value.email && customer.email !== value.email){
+                    if(customer_email) {
+                        return Promise.reject(CustomAPIError.response('Customer with this email already exists', HttpStatus.NOT_FOUND.code))
+                    }
+                };
+
+                const customer_phone = await datasources.customerDAOService.findByAny({
+                    phone: value.phone
+                });
+
+                if(value.phone && customer.phone !== value.phone){
+                    if(customer_phone) {
+                        return Promise.reject(CustomAPIError.response('Customer with this phone number already exists', HttpStatus.NOT_FOUND.code))
+                    }
+                };
+
+                let _email = ''
+                if(!customer.googleId || !customer.facebookId || !customer.appleId) {
+                    _email = value.email
+                };
+
+                let _phone = ''
+                if(customer.googleId || customer.facebookId || customer.appleId) {
+                    _phone = value.phone
+                };
+
+                const profile_image = files.profileImageUrl as File;
+                const basePath = `${UPLOAD_BASE_PATH}/customer`;
+
+                let _profileImageUrl = ''
+                if(profile_image) {
+                    // File size validation
+                    const maxSizeInBytes = 1000 * 1024; // 1MB
+                    if (profile_image.size > maxSizeInBytes) {
+                        return reject(CustomAPIError.response('Image size exceeds the allowed limit', HttpStatus.BAD_REQUEST.code));
+                    }
+            
+                    // File type validation
+                    const allowedFileTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+                    if (!allowedFileTypes.includes(profile_image.mimetype as string)) {
+                        return reject(CustomAPIError.response('Invalid image format. Only JPEG, PNG, and JPG images are allowed', HttpStatus.BAD_REQUEST.code));
+                    }
+            
+                    _profileImageUrl = await Generic.getImagePath({
+                        tempPath: profile_image.filepath,
+                        filename: profile_image.originalFilename as string,
+                        basePath,
+                    });
+                };
+
+                const customerValues = {
+                    ...value,
+                    email: _email ? _email : customer.email,
+                    profileImageUrl: profile_image && _profileImageUrl,
+                    phone: _phone ? _phone : customer.phone
+                };
+
+                const updatedCustomer = await datasources.customerDAOService.updateByAny(
+                    {_id: customerId},
+                    customerValues
+                );
                 
-                        _profileImageUrl = await Generic.getImagePath({
-                            tempPath: profile_image.filepath,
-                            filename: profile_image.originalFilename as string,
-                            basePath,
-                        });
-                    };
-
-                    const customerValues = {
-                        ...value,
-                        email: _email ? _email : customer.email,
-                        profileImageUrl: profile_image && _profileImageUrl,
-                        phone: _phone ? _phone : customer.phone
-                    };
-
-                    const updatedCustomer = await datasources.customerDAOService.updateByAny(
-                        {_id: customerId},
-                        customerValues
-                    );
-                    
-                    //@ts-ignore
-                    return resolve(updatedCustomer);
-
-                // } catch (error) {
-                //     return reject(error)
-                // }
+                //@ts-ignore
+                return resolve(updatedCustomer);
             })
         })
     }
