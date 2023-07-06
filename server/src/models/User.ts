@@ -72,7 +72,7 @@ export const $updateUserSchema: Joi.SchemaMap = {
 };
 
 export const $loginSchema: Joi.SchemaMap = {
-  phone: Joi.string().optional().label('phone'),
+  email: Joi.string().required().label('email'),
   password: Joi.string()
   .regex(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[A-Za-z\d]{8,20}$/)
   .messages({

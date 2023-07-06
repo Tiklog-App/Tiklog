@@ -60,6 +60,7 @@ import QueueEvents = appCommonTypes.QueueEvents;
   export const EXPIRATION_AMQP_MESSAGE = 5000;
   export const PACKAGE_REQUEST = 'package_requests';
   export const DRIVER_RESPONSES = 'driver_responses';
+  export const PACKAGE_REQUEST_INFO = 'package_request_info';
 
   export const CREATE_USER_ = 'event:CREATE_USER';
   export const UPDATE_USER_ = 'event:UPDATE_USER_';

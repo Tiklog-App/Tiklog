@@ -4,19 +4,23 @@ import BcryptPasswordEncoder = appCommonTypes.BcryptPasswordEncoder;
 import { NextFunction, Request, Response } from "express";
 import { TryCatch } from "../decorators";
 import Joi from "joi";
-import { $finishSavingCustomer, $loginSchema, $saveCustomerSchema, ICustomerModel } from "../models/Customer";
+import { $finishSavingCustomer, $loginSchemaCustomer, $saveCustomerSchema, ICustomerModel } from "../models/Customer";
 import CustomAPIError from "../exceptions/CustomAPIError";
 import HttpStatus from "../helpers/HttpStatus";
 import datasources from '../services/dao';
-import settings from "../config/settings";
+import settings, { CUSTOMER_PERMISSION, MANAGE_ALL, RIDER_PERMISSION } from "../config/settings";
 import Generic from "../utils/Generic";
-import { $finishSavingRider, $saveRiderSchema, IRiderModel } from "../models/Rider";
-import { IUserModel } from "../models/User";
+import { $finishSavingRider, $loginSchemaRider, $saveRiderSchema, IRiderModel } from "../models/Rider";
+import { $loginSchema, IUserModel } from "../models/User";
 import RedisService from "../services/RedisService";
 import authService from "../services/AuthService";
 import { RIDER_STATUS_PENDING } from "../config/constants";
+import { Server, Socket } from 'socket.io';
+import RabbitMqService from "../services/RabbitMqService";
+import { decode } from 'jsonwebtoken';
 
 const redisService = new RedisService();
+const rabbitMqService = new RabbitMqService();
 
 export default class AuthenticationController {
     private declare readonly passwordEncoder: BcryptPasswordEncoder;
@@ -34,10 +38,10 @@ export default class AuthenticationController {
     @TryCatch
     public async admin_login(req: Request) {
         const { error, value } = Joi.object<IUserModel>($loginSchema).validate(req.body);
-
+        
         if(error) return Promise.reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
 
-        const user = await datasources.userDAOService.findByAny({phone: value.phone});
+        const user = await datasources.userDAOService.findByAny({email: value.email});
         if(!user) return Promise.reject(CustomAPIError.response(HttpStatus.UNAUTHORIZED.value, HttpStatus.BAD_REQUEST.code));
 
         const hash = user.password;
@@ -207,8 +211,10 @@ export default class AuthenticationController {
 
     }
     @TryCatch
-    public async sign_in_customer(req: Request) {
-      const { error, value } = Joi.object<ICustomerModel>($loginSchema).validate(req.body);
+    public async sign_in_customer(req: Request, socket: Socket<any, any, any, any>) {
+      await rabbitMqService.connectToRabbitMQ()
+
+      const { error, value } = Joi.object<ICustomerModel>($loginSchemaCustomer).validate(req.body);
 
       if(error) return Promise.reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
 
@@ -392,7 +398,7 @@ export default class AuthenticationController {
 
     @TryCatch
     public async sign_in_rider(req: Request) {
-      const { error, value } = Joi.object<IRiderModel>($loginSchema).validate(req.body);
+      const { error, value } = Joi.object<IRiderModel>($loginSchemaRider).validate(req.body);
 
       if(error) return Promise.reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
 
@@ -448,25 +454,45 @@ export default class AuthenticationController {
     }
 
     public async signOut(req: Request) {
-        try {
-          //@ts-ignore
-          const { _id } = req.user
+      try {
+        //@ts-ignore
+        const { loginToken, _id } = req.user;
+        const decoded = decode(loginToken);
 
-            //@ts-ignore
-            await req.user.update(
-              {_id: _id},
-              { loginToken:  '' }
-            ); // check sign out giving issues.
+        //@ts-ignore
+        const firstPermission = decoded.permissions.find(() => true);
 
-            const response: HttpResponse<null> = {
-                code: HttpStatus.OK.code,
-                message: HttpStatus.OK.value
-            };
+        if (firstPermission) {
+          if (firstPermission.name === CUSTOMER_PERMISSION) {
 
-            return Promise.resolve(response)
-        } catch (error) {
-            return Promise.reject(error)
+            await datasources.customerDAOService.update(
+              { _id: _id },
+              { loginToken: '', loginDate: null }
+            );
+          } else if (firstPermission.name === RIDER_PERMISSION) {
+            await datasources.riderDAOService.update(
+              { _id: _id },
+              { loginToken: '', loginDate: null }
+            );
+          } else {
+            await datasources.userDAOService.update(
+              { _id: _id },
+              { loginToken: '', loginDate: null }
+            );
+          }
         }
+        
+
+        const response: HttpResponse<null> = {
+            code: HttpStatus.OK.code,
+            message: "Signed out successfully"
+        };
+
+        return Promise.resolve(response)
+  
+      } catch (error) {
+          return Promise.reject(error)
+      }
     };
 
     public googleOAuth = (req: Request, res: Response, next: NextFunction) => {

@@ -1,6 +1,6 @@
 import { appCommonTypes } from '../../@types/app-common';
 import RouteEndpoints = appCommonTypes.RouteEndpoints;
-import { changeUserPasswordHandler, createUser, deleteUserHandler, getUserHandler, getUsersHandler, updateUserHandler, updateUserStatusHandler } from '../../routes/userRoute';
+import { changeUserPasswordHandler, createUser, deleteUserHandler, getOwnUserHandler, getUserHandler, getUsersHandler, updateUserHandler, updateUserStatusHandler } from '../../routes/userRoute';
 
 const userEndpoints: RouteEndpoints = [
     {
@@ -44,6 +44,12 @@ const userEndpoints: RouteEndpoints = [
         method: 'get',
         path: '/user/:userId',
         handler: getUserHandler
+    },
+    {
+        name: 'get own user',
+        method: 'get',
+        path: '/user-detail',
+        handler: getOwnUserHandler
     }
 ];
 

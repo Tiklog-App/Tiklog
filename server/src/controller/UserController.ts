@@ -11,7 +11,7 @@ import HttpResponse = appCommonTypes.HttpResponse;
 import BcryptPasswordEncoder = appCommonTypes.BcryptPasswordEncoder;
 import { appEventEmitter } from '../services/AppEventEmitter';
 import { CHANGE_USER_PASSWORD, CREATE_USER_, DELETE_USER_, UPDATE_USER_, UPDATE_USER_STATUS_ } from '../config/constants';
-import settings, { MANAGE_ALL, CREATE_USER, UPDATE_USER, DELETE_USER, READ_CUSTOMER, READ_USER } from '../config/settings';
+import settings, { MANAGE_ALL, CREATE_USER, UPDATE_USER, DELETE_USER, READ_CUSTOMER, READ_USER, MANAGE_SOME } from '../config/settings';
 import Generic from '../utils/Generic';
 
 export default class UserController {
@@ -136,7 +136,7 @@ export default class UserController {
    * permission can do this 
    */
   @TryCatch
-  @HasPermission([MANAGE_ALL, READ_USER])
+  @HasPermission([MANAGE_ALL, MANAGE_SOME, READ_USER])
   public  async user (req: Request) {
     const userId = req.params.userId;
     
@@ -147,6 +147,25 @@ export default class UserController {
         code: HttpStatus.OK.code,
         message: HttpStatus.OK.value,
         result: user,
+    };
+  
+    return Promise.resolve(response);
+  };
+
+  @TryCatch
+  @HasPermission([MANAGE_ALL, MANAGE_SOME, READ_USER])
+  public  async ownUserDetail (req: Request) {
+
+    //@ts-ignore
+    const userId = req.user._id;
+    
+    const user = await datasources.userDAOService.findById(userId);
+    if(!user) return Promise.reject(CustomAPIError.response(`User with Id: ${userId} does not exist`, HttpStatus.BAD_REQUEST.code));
+    
+    const response: HttpResponse<IUserModel> = {
+        code: HttpStatus.OK.code,
+        message: HttpStatus.OK.value,
+        result: user
     };
   
     return Promise.resolve(response);

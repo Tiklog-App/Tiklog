@@ -83,8 +83,6 @@ export default function authenticateRouteWrapper(handler: AsyncWrapper) {
       req.permissions = payload.permissions;
       req.jwt = jwt;
 
-      req.permissions = payload.permissions;
-
       if (payload.userId) {
         const { userId } = payload;
 

@@ -28,8 +28,16 @@ class RedisService {
     return token;
   }
 
-  public saveToken(keys: string, data: any, expire: number): void {
-    this.redisClient.set(keys, data, 'EX', expire);
+  // public saveToken(keys: string, data: any, expire: number): void {
+  //   this.redisClient.set(keys, data, 'EX', expire);
+  // }
+
+  public saveToken(keys: string, data: any, expire?: number): void {
+    if (expire) {
+      this.redisClient.set(keys, data, 'EX', expire);
+    } else {
+      this.redisClient.set(keys, data);
+    }
   }
 
   public sendNotification(phoneNumber: string, message: string): Promise<any> {

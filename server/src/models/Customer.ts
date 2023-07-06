@@ -131,8 +131,8 @@ export const $finishSavingCustomer: Joi.SchemaMap = {
   phone: Joi.string().required().label('phone')
 };
 
-export const $loginSchema: Joi.SchemaMap = {
-    phone: Joi.string().optional().label('phone'),
+export const $loginSchemaCustomer: Joi.SchemaMap = {
+    phone: Joi.string().required().label('phone'),
     password: Joi.string()
     .regex(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[A-Za-z\d]{8,20}$/)
     .messages({

@@ -35,6 +35,12 @@ export const getUserHandler = authenticateRouteWrapper( async (req, res) =>  {
     res.status(response.code).json(response);
 });
 
+export const getOwnUserHandler = authenticateRouteWrapper( async (req, res) =>  {
+    const response = await userController.ownUserDetail(req);
+
+    res.status(response.code).json(response);
+});
+
 export const getUsersHandler = authenticateRouteWrapper( async (req, res) =>  {
     const response = await userController.users(req);
 

@@ -2,10 +2,10 @@ import http from 'http';
 
 import 'dotenv/config';
 
-import app, { corsOptions } from './app';
+import app from './app';
 import startup from './startup';
 import AppLogger from './utils/AppLogger';
-import { Server as SocketServer } from 'socket.io';
+import { Server } from 'socket.io';
 import RabbitMqService from './services/RabbitMqService';
 const rabbitMqService = new RabbitMqService();
 
@@ -21,16 +21,13 @@ async function startRabbitMqService() {
   rabbitMqService.setupSocketIO(server);
 }
 
-const io = new SocketServer(server, {
-  cors: corsOptions,
-});
+// const io = new SocketServer(server);
 
-io.on('connection', socket => {
-  console.log('Socket connected:', socket.id)
-  logger.info(socket.id);
-});
+// // io.on('connection', socket => {
+// //   logger.info(socket.id);
+// // });
 
-startup(io).catch(console.error);
+startup().catch(console.error);
 
 startRabbitMqService().then(() => {
   server.listen(port, () => logger.info(`Server running on port: ${port}`));

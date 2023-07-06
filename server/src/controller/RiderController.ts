@@ -427,11 +427,7 @@ export default class RiderController {
 
         const addressValues: Partial<IRiderAddressModel> ={
             ...value,
-            rider: riderId,
-            favorite: Generic.generateSlug(value.address_type) === HOME_ADDRESS
-                        || Generic.generateSlug(value.address_type) === OFFICE_ADDRESS
-                            ? true
-                            : false
+            rider: riderId
         };
 
         const address = await datasources.riderAddressDAOService.create(addressValues as IRiderAddressModel);

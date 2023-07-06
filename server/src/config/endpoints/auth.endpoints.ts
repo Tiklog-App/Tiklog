@@ -9,6 +9,7 @@ import {
   signInHandler_Admin,
   signInHandler_Customer,
   signInHandler_Rider,
+  signOutHandler,
   signupHandler_Customer,
   signupHandler_Rider  
 } from '../../routes/authRoute';
@@ -58,6 +59,12 @@ const authEndpoints: RouteEndpoint  = [
         method: 'post',
         path: '/sign-up-rider',
         handler: signupHandler_Rider
+    },
+    {
+        name: 'signOut',
+        method: 'put',
+        path: '/sign-out',
+        handler: signOutHandler
     },
     {
         name: 'google OAuth rider',

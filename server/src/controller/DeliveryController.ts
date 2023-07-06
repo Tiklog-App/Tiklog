@@ -23,7 +23,8 @@ import {
     DELIVERED,
     ON_TRANSIT,
     CANCELED,
-    EDIT_DELIVERY
+    EDIT_DELIVERY,
+    PACKAGE_REQUEST_INFO
 } from '../config/constants';
 import HttpResponse = appCommonTypes.HttpResponse;
 import { CUSTOMER_PERMISSION, DELETE_DELIVERY, MANAGE_ALL, MANAGE_SOME, READ_DELIVERY } from '../config/settings';
@@ -282,8 +283,17 @@ export default class DeliveryController {
             gender: rider.gender
         };
 
-        const redisData = JSON.stringify(riderData)
-        redisService.saveToken('riderInfo', redisData, 3600)
+        const packageRequestData = {
+            customerId: customerId,
+            recipientAddress: lastDelivery.recipientAddress,
+            senderAddress: lastDelivery.senderAddress,
+            riderId: rider._id,
+            riderFirstName: rider.firstName,
+            senderName: lastDelivery.senderName
+        }
+
+        const redisData = JSON.stringify(packageRequestData)
+        redisService.saveToken(PACKAGE_REQUEST_INFO, redisData, 3600)
 
         let arrivalTime = 0
         if(minutes <= 2) {
@@ -302,41 +312,56 @@ export default class DeliveryController {
         
     }
 
-    // @TryCatch
-    // private async sendNotificationToDriver(req: Request)  {
-
-        
-    // }
-
-    // @TryCatch
-    // public async requestRider(req: Request) {
-
-    // }
-
     @TryCatch
     public async packageRequest(req: Request, socket: Socket<any, any, any, any>) {
         await rabbitMqService.connectToRabbitMQ()
 
-        const rider = await redisService.getToken('riderInfo');
+        const rider = await redisService.getToken(PACKAGE_REQUEST_INFO);
+
         let packageRequest: any = null
         if(rider) {
             packageRequest = rider
         }
 
         await rabbitMqService.submitPackageRequest(packageRequest, socket)
+
+        const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: `Requested`
+        };
+      
+        return Promise.resolve(response);
     }
 
     @TryCatch
     public async sendDriverResponse(req: Request) {
-        await rabbitMqService.connectToRabbitMQ()
-        const driverResponse = {
-            driverId: 123,
-            availability: true
+        await rabbitMqService.connectToRabbitMQ();
+
+        // const { availability } = req.body;
+
+        const customerDetail: any = await redisService.getToken(PACKAGE_REQUEST_INFO);
+
+        if(!customerDetail)
+            return Promise.reject(CustomAPIError.response('Response was sent to the customer already', HttpStatus.BAD_REQUEST.code));
+
+        const riderResponse = {
+            customerId: customerDetail.customerId,
+            riderId: customerDetail.riderId,
+            availability: true //availability
         };
 
-        await rabbitMqService.sendDriverResponse(driverResponse);
+        await rabbitMqService.sendDriverResponse(riderResponse);
+
+        await redisService.deleteRedisKey(PACKAGE_REQUEST_INFO)
 
         await rabbitMqService.disconnectFromRabbitMQ();
+
+        const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: `Rider response`
+        };
+      
+        return Promise.resolve(response);
     }
 
     private async doDelivery (req: Request) {
