@@ -151,25 +151,6 @@ export default class UserController {
   
     return Promise.resolve(response);
   };
-
-  @TryCatch
-  @HasPermission([MANAGE_ALL, MANAGE_SOME, READ_USER])
-  public  async ownUserDetail (req: Request) {
-
-    //@ts-ignore
-    const userId = req.user._id;
-    
-    const user = await datasources.userDAOService.findById(userId);
-    if(!user) return Promise.reject(CustomAPIError.response(`User with Id: ${userId} does not exist`, HttpStatus.BAD_REQUEST.code));
-    
-    const response: HttpResponse<IUserModel> = {
-        code: HttpStatus.OK.code,
-        message: HttpStatus.OK.value,
-        result: user
-    };
-  
-    return Promise.resolve(response);
-  };
   
   /**
    * @name users

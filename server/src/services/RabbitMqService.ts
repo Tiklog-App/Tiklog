@@ -188,7 +188,6 @@ class RabbitMqService {
     const customerId = driverResponse.customerId;
     const customerSocket = this.socketMap.get(customerId);
     if (customerSocket) {
-      console.log('hello response')
       customerSocket.emit('riderResponse', notification);
     }
   }

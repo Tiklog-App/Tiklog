@@ -596,10 +596,10 @@ export default class RiderController {
                 const riderId = req.params.riderId;
 
                 const { error, value } = Joi.object<IRiderModel>($updateRiderSchema).validate(fields);
-                if(error) return Promise.reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
+                if(error) return reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
                 
                 const rider = await datasources.riderDAOService.findById(riderId);
-                if(!rider) return Promise.reject(CustomAPIError.response('Rider not found', HttpStatus.NOT_FOUND.code));
+                if(!rider) return reject(CustomAPIError.response('Rider not found', HttpStatus.NOT_FOUND.code));
 
                 const rider_email = await datasources.riderDAOService.findByAny({
                     email: value.email
@@ -607,7 +607,7 @@ export default class RiderController {
 
                 if(value.email && rider.email !== value.email){
                     if(rider_email) {
-                        return Promise.reject(CustomAPIError.response('Rider with this email already exists', HttpStatus.NOT_FOUND.code))
+                        return reject(CustomAPIError.response('Rider with this email already exists', HttpStatus.NOT_FOUND.code))
                     }
                 };
 
@@ -617,7 +617,7 @@ export default class RiderController {
 
                 if(value.phone && rider.phone !== value.phone){
                     if(rider_phone) {
-                        return Promise.reject(CustomAPIError.response('Rider with this phone number already exists', HttpStatus.NOT_FOUND.code))
+                        return reject(CustomAPIError.response('Rider with this phone number already exists', HttpStatus.NOT_FOUND.code))
                     }
                 };
 

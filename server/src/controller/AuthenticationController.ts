@@ -458,7 +458,7 @@ export default class AuthenticationController {
         //@ts-ignore
         const { loginToken, _id } = req.user;
         const decoded = decode(loginToken);
-
+        console.log(decoded, 'decode')
         //@ts-ignore
         const firstPermission = decoded.permissions.find(() => true);
 

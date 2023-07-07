@@ -445,10 +445,10 @@ export default class CustomerController {
                 const customerId = req.params.customerId;
 
                 const { error, value } = Joi.object<ICustomerModel>($updateCustomerSchema).validate(fields);
-                if(error) return Promise.reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
+                if(error) return reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
                 
                 const customer = await datasources.customerDAOService.findById(customerId);
-                if(!customer) return Promise.reject(CustomAPIError.response('Customer not found', HttpStatus.NOT_FOUND.code));
+                if(!customer) return reject(CustomAPIError.response('Customer not found', HttpStatus.NOT_FOUND.code));
 
                 const customer_email = await datasources.customerDAOService.findByAny({
                     email: value.email
@@ -456,7 +456,7 @@ export default class CustomerController {
 
                 if(value.email && customer.email !== value.email){
                     if(customer_email) {
-                        return Promise.reject(CustomAPIError.response('Customer with this email already exists', HttpStatus.NOT_FOUND.code))
+                        return reject(CustomAPIError.response('Customer with this email already exists', HttpStatus.NOT_FOUND.code))
                     }
                 };
 
@@ -466,7 +466,7 @@ export default class CustomerController {
 
                 if(value.phone && customer.phone !== value.phone){
                     if(customer_phone) {
-                        return Promise.reject(CustomAPIError.response('Customer with this phone number already exists', HttpStatus.NOT_FOUND.code))
+                        return reject(CustomAPIError.response('Customer with this phone number already exists', HttpStatus.NOT_FOUND.code))
                     }
                 };
 
