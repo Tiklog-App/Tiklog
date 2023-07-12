@@ -321,7 +321,7 @@ export default class RiderController {
 
             const response: HttpResponse<any> = {
                 code: HttpStatus.OK.code,
-                message: 'If your email is registered with us, you will receive a password reset code.'
+                message: `If your email is registered with us, you will receive a password reset code. ${token}`
             };
         
             return Promise.resolve(response);

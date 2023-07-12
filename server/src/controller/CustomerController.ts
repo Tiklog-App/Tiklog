@@ -239,7 +239,7 @@ export default class CustomerController {
 
             const response: HttpResponse<any> = {
                 code: HttpStatus.OK.code,
-                message: 'If your email is registered with us, you will receive a password reset code.'
+                message: `If your email is registered with us, you will receive a password reset code. ${token}`
             };
         
             return Promise.resolve(response);
@@ -262,7 +262,7 @@ export default class CustomerController {
 
         if(!customer)
             return Promise.reject(CustomAPIError.response('Customer not found', HttpStatus.BAD_REQUEST.code));
-        console.log(customer.passwordResetCode, passwordResetCode, 'password reset code')
+
         if(customer.passwordResetCode !== passwordResetCode)
             return Promise.reject(CustomAPIError.response('Password reset code do not match', HttpStatus.BAD_REQUEST.code));
 
