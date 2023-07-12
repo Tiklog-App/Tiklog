@@ -13,6 +13,7 @@ import RiderAddressRepository from "../../repositories/RiderAddressRepository";
 import VehicleRepository from "../../repositories/VehicleRepository";
 import VehicleTypeRepository from "../../repositories/VehicleTypeRepository";
 import VehicleNameRepository from "../../repositories/VehicleNameRepository";
+import NotificationRepository from "../../repositories/NotificationRepository";
 
 import PermissionDAOService from "./PermissionDAOService";
 import RoleDAOService from "./RoleDAOService";
@@ -29,6 +30,7 @@ import RiderAddressDAOService from "./RiderAddressDAOService";
 import VehicleDAOService from "./VehicleDAOService";
 import VehicleNameDAOService from "./VehicleNameDAOService";
 import VehicleTypeDAOService from "./VehicleTypeDAOService";
+import NotificationDAOService from "./NotificationDAOService";
 
 const permissionRepository = new PermissionRepository();
 const roleRepository = new RoleRepository();
@@ -45,6 +47,7 @@ const riderAddressRepository = new RiderAddressRepository();
 const vehicleRepository = new VehicleRepository();
 const vehicleTypeRepository = new VehicleTypeRepository();
 const vehicleNameRepository = new VehicleNameRepository();
+const notificationRepository = new NotificationRepository();
 
 const permissionDAOService = new PermissionDAOService(permissionRepository);
 const roleDAOService = new RoleDAOService(roleRepository);
@@ -61,6 +64,7 @@ const riderAddressDAOService = new RiderAddressDAOService(riderAddressRepository
 const vehicleDAOService = new VehicleDAOService(vehicleRepository);
 const vehicleNameDAOService = new VehicleNameDAOService(vehicleNameRepository);
 const vehicleTypeDAOService = new VehicleTypeDAOService(vehicleTypeRepository);
+const notificationDAOService = new NotificationDAOService(notificationRepository);
 
 export default {
     vehicleDAOService,
@@ -77,5 +81,6 @@ export default {
     walletDAOService,
     transactionDAOService,
     deliveryDAOService,
-    riderAddressDAOService
+    riderAddressDAOService,
+    notificationDAOService
 }

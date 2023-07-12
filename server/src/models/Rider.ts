@@ -21,6 +21,8 @@ interface IRider {
   googleId: string | null;
   facebookId: string | null;
   status: string;
+  level: number;
+  passwordResetCode: string;
 }
 
 const riderSchema = new Schema<IRider>({
@@ -41,7 +43,9 @@ const riderSchema = new Schema<IRider>({
   googleId: { type: String, allowNull: true },
   facebookId: { type: String, allowNull: true },
   roles: [{ type: Schema.Types.ObjectId, ref: 'Role' }],
-  status: { type: String }
+  status: { type: String },
+  level: { type: Number, default: 0 },
+  passwordResetCode: { type: String, allowNull: true }
 });
 
 riderSchema.pre('find', function (next) {
@@ -79,6 +83,16 @@ export const $updateRiderSchema: Joi.SchemaMap = {
   phone: Joi.string().label('phone')
 };
 
+export const $editRiderProfileSchema: Joi.SchemaMap = {
+  firstName: Joi.string().label('first name'),
+  lastName: Joi.string().label('last name'),
+  email: Joi.string().label('email'),
+  other_names: Joi.string().label('other names'),
+  gender: Joi.string().label('gender'),
+  profileImageUrl: Joi.string().label('profile image'),
+  phone: Joi.string().label('phone')
+};
+
 export const $changePassword: Joi.SchemaMap = {
   password: Joi.string()
     .regex(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[A-Za-z\d]{8,20}$/)
@@ -103,7 +117,8 @@ export const $savePasswordAfterReset: Joi.SchemaMap = {
     })
     .required()
     .label('password'),
-  confirm_password: Joi.ref("password")
+  confirm_password: Joi.ref("password"),
+  email: Joi.string().required().label('email')
 };
 
 export const $savePassword: Joi.SchemaMap = {

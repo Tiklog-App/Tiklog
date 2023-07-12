@@ -21,6 +21,8 @@ interface ICustomer {
   appleId: string | null;
   facebookId: string | null;
   roles: mongoose.Types.ObjectId[];
+  level: number;
+  passwordResetCode: string;
 }
 
 const customerSchema = new Schema<ICustomer>({
@@ -40,7 +42,9 @@ const customerSchema = new Schema<ICustomer>({
   googleId: { type: String, allowNull: true },
   appleId: { type: String, allowNull: true },
   facebookId: { type: String, allowNull: true },
-  roles: [{ type: Schema.Types.ObjectId, ref: 'Role' }]
+  roles: [{ type: Schema.Types.ObjectId, ref: 'Role' }],
+  level: { type: Number, default: 0 },
+  passwordResetCode: { type: String, allowNull: true }
 });
 
 // customerSchema.pre('remove', async function (next) {
@@ -86,6 +90,16 @@ export const $updateCustomerSchema: Joi.SchemaMap = {
   phone: Joi.string().label('phone')
 };
 
+export const $editCustomerProfileSchema: Joi.SchemaMap = {
+  firstName: Joi.string().label('first name'),
+  lastName: Joi.string().label('last name'),
+  email: Joi.string().label('email'),
+  other_names: Joi.string().label('other names'),
+  gender: Joi.string().label('gender'),
+  profileImageUrl: Joi.string().label('profile image'),
+  phone: Joi.string().label('phone')
+};
+
 export const $changePassword: Joi.SchemaMap = {
   password: Joi.string()
     .regex(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[A-Za-z\d]{8,20}$/)
@@ -110,7 +124,8 @@ export const $savePasswordAfterReset: Joi.SchemaMap = {
     })
     .required()
     .label('password'),
-  confirm_password: Joi.ref("password")
+  confirm_password: Joi.ref("password"),
+  email: Joi.string().required().label('email')
 };
 
 export const $savePassword: Joi.SchemaMap = {

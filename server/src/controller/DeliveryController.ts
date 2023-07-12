@@ -204,6 +204,8 @@ export default class DeliveryController {
 
         const customerLongitude = lastDelivery.senderLocation.coordinates[0];
         const customerLatitude = lastDelivery.senderLocation.coordinates[1];
+        const deliveryRefNumber = lastDelivery.deliveryRefNumber;
+        const estimatedDeliveryTime = lastDelivery.estimatedDeliveryTime;
 
         const maxDistance = MAX_DISTANCE
 
@@ -280,7 +282,15 @@ export default class DeliveryController {
             status: rider.status,
             firstName: rider.firstName,
             lastName: rider.lastName,
-            gender: rider.gender
+            gender: rider.gender,
+            profileImage: rider.profileImageUrl
+        };
+
+        let arrivalTime = 0
+        if(minutes <= 2) {
+            arrivalTime += 2
+        } else {
+            arrivalTime += minutes
         };
 
         const packageRequestData = {
@@ -289,22 +299,18 @@ export default class DeliveryController {
             senderAddress: lastDelivery.senderAddress,
             riderId: rider._id,
             riderFirstName: rider.firstName,
-            senderName: lastDelivery.senderName
+            senderName: lastDelivery.senderName,
+            arrivalTime: `Rider will arrive in ${arrivalTime}min`,
+            deliveryRefNumber: deliveryRefNumber,
+            estimatedDeliveryTime: estimatedDeliveryTime
         }
 
         const redisData = JSON.stringify(packageRequestData)
         redisService.saveToken(PACKAGE_REQUEST_INFO, redisData, 3600)
 
-        let arrivalTime = 0
-        if(minutes <= 2) {
-            arrivalTime += 2
-        } else {
-            arrivalTime += minutes
-        }
-
         const response: HttpResponse<any> = {
             code: HttpStatus.OK.code,
-            message: `Rider will arrive in ${arrivalTime}min`,
+            message: `Rider is ${arrivalTime}min away from your location`,
             result: riderData
         };
       
@@ -347,14 +353,15 @@ export default class DeliveryController {
         const riderResponse = {
             customerId: customerDetail.customerId,
             riderId: customerDetail.riderId,
-            availability: true //availability
+            availability: true, //availability
+            arrivalTime: customerDetail.arrivalTime
         };
 
         await rabbitMqService.sendDriverResponse(riderResponse);
 
-        await redisService.deleteRedisKey(PACKAGE_REQUEST_INFO)
+        // await redisService.deleteRedisKey(PACKAGE_REQUEST_INFO)
 
-        await rabbitMqService.disconnectFromRabbitMQ();
+        // await rabbitMqService.disconnectFromRabbitMQ();
 
         const response: HttpResponse<any> = {
             code: HttpStatus.OK.code,
@@ -424,7 +431,8 @@ export default class DeliveryController {
             status: PENDING,
             deliveryFee: _deliveryFee.toFixed(2),
             customer: customerId,
-            estimatedDeliveryTime: deliveryTime
+            estimatedDeliveryTime: deliveryTime,
+            deliverRefNumber: Generic.generateRandomStringCrypto(6)
         };
 
         const delivery  = await datasources.deliveryDAOService.create(deliveryValue as IDeliveryModel);

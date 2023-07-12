@@ -12,6 +12,12 @@ export const updateCustomerHandler = authenticateRouteWrapper( async (req, res) 
     res.status(response.code).json(response);
 });
 
+export const editCustomerProfileHandler = authenticateRouteWrapper( async (req, res) =>  {
+    const response = await customerController.editCustomerProfile(req);
+
+    res.status(response.code).json(response);
+});
+
 export const updateCustomerStatusHandler = authenticateRouteWrapper( async (req, res) =>  {
     const response = await customerController.updateCustomerStatus(req);
 
@@ -51,6 +57,13 @@ export const resetCustomerPasswordHandler = async (req: Request, res: Response) 
 
 export const saveCustomerPasswordHandler = async (req: Request, res: Response) =>  {
     const response = await customerController.savePassword(req);
+
+    //@ts-ignore
+    res.status(response.code).json(response);
+};
+
+export const customerPasswordResetCodeHandler = async (req: Request, res: Response) =>  {
+    const response = await customerController.enterPasswordResetCode(req);
 
     //@ts-ignore
     res.status(response.code).json(response);

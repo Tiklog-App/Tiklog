@@ -1,12 +1,18 @@
 import amqp, { Connection, Channel } from 'amqplib';
 import { Server, Socket } from 'socket.io';
 import settings from '../config/settings';
-import { DRIVER_RESPONSES, EXPIRATION_AMQP_MESSAGE, PACKAGE_REQUEST, PACKAGE_REQUEST_INFO } from '../config/constants';
+import {
+  DRIVER_RESPONSES,
+  EXPIRATION_AMQP_MESSAGE,
+  PACKAGE_REQUEST,
+  PACKAGE_REQUEST_INFO
+} from '../config/constants';
 import RedisService from './RedisService';
 import { corsOptions } from '../app';
 import AppLogger from '../utils/AppLogger';
 import CustomAPIError from '../exceptions/CustomAPIError';
 import HttpStatus from '../helpers/HttpStatus';
+import datasources from  '../services/dao';
 
 const logger = AppLogger.init('server').logger;
 const redisService = new RedisService();
@@ -46,12 +52,13 @@ class RabbitMqService {
   async getAvailableDriver() {
     const keys = PACKAGE_REQUEST_INFO
     const rider = await redisService.getToken(keys);
+    
     return rider;
   }
 
-  async sendNotificationToDriver(driverId: any, notification: any) {
+  async sendNotificationToDriver(riderId: any, notification: any) {
 
-    const driverSocket = this.socketMap.get(driverId);
+    const driverSocket = this.socketMap.get(riderId);
 
     if (driverSocket) {
       driverSocket.emit('notification', notification);
@@ -64,7 +71,14 @@ class RabbitMqService {
 
     if (driver) {
       // Assign the package request to the driver
-      const { riderId, riderFirstName, senderName, senderAddress, recipientAddress }: any = driver;
+      const {
+        riderId,
+        riderFirstName,
+        senderName,
+        senderAddress,
+        recipientAddress,
+        customerId
+      }: any = driver;
 
       const assignedPackage = {
         ...packageRequest,
@@ -76,11 +90,12 @@ class RabbitMqService {
         title: 'New Delivery Request',
         body: `You have been assigned a new delivery request from ${senderName}.`,
         senderAddress: senderAddress,
-        recipientAddress: recipientAddress
+        recipientAddress: recipientAddress,
+        customerId: customerId
       };
 
-      const driverId = riderId;
-      this.sendNotificationToDriver(driverId, notification);
+      // const driverId = riderId;
+      this.sendNotificationToDriver(riderId, notification);
 
       const exchange = 'assigned_package_requests';
       const message = JSON.stringify(assignedPackage);
@@ -95,7 +110,7 @@ class RabbitMqService {
   }
 
   async submitPackageRequest(packageRequest: any, socket: Socket<any, any, any, any>): Promise<void> {
-    const exchange = PACKAGE_REQUEST;
+    const exchange = PACKAGE_REQUEST
     const message = JSON.stringify(packageRequest);
     const expiration = EXPIRATION_AMQP_MESSAGE; // Expiration in milliseconds
 
@@ -111,7 +126,7 @@ class RabbitMqService {
   }
 
   async listenForPackageRequests(): Promise<void> {
-    const exchange = PACKAGE_REQUEST;
+    const exchange = PACKAGE_REQUEST
 
     await this.channel!.assertExchange(exchange, 'fanout', { durable: false });
     const queue = await this.channel!.assertQueue('', { exclusive: true });
@@ -176,25 +191,67 @@ class RabbitMqService {
     console.log('Driver response sent.');
   }
 
-  notifyUserAboutDriverResponse(driverResponse: any): void{
-    console.log(driverResponse, 'driver response');
-
+  async notifyUserAboutDriverResponse(driverResponse: any): Promise<void>{
     const notification = {
       title: 'Rider response',
       availability: driverResponse.availability,
-      riderId: driverResponse.riderId
+      riderId: driverResponse.riderId,
+      arrivalTime: driverResponse.arrivalTime
     }
 
     const customerId = driverResponse.customerId;
+    console.log(customerId, 'customer id')
     const customerSocket = this.socketMap.get(customerId);
+    console.log(customerSocket?.id, 'cus socket id')
     if (customerSocket) {
-      customerSocket.emit('riderResponse', notification);
+      if(driverResponse.availability) {
+        customerSocket.emit('riderResponse', notification);
+        this.riderAvailability(driverResponse.availability);
+        // await redisService.deleteRedisKey(PACKAGE_REQUEST_INFO)
+      } else {
+        this.riderAvailability(driverResponse.availability);
+        customerSocket.emit('riderDeclined', 'Rider declined your request');
+        await redisService.deleteRedisKey(PACKAGE_REQUEST_INFO)
+      }
     }
   }
 
-  // findSocketIdByRiderId(riderId: string): string | undefined {
-  //   return this.socketMap.get(riderId);
-  // }  
+  //Rider is available to accept delivery
+  async riderAvailability(availabilityStatus: boolean): Promise<void> {
+    const keys = PACKAGE_REQUEST_INFO
+    const redisData = await redisService.getToken(keys);
+    const {deliveryRefNumber, riderId, customerId }: any = redisData;
+
+    await datasources.notificationDAOService.create({
+      deliveryRefNumber: deliveryRefNumber,
+      riderAvailabilityStatus: availabilityStatus,
+      rider: riderId,
+      customer: customerId
+    } as any);
+
+  };
+
+  //Sends a notification to customer notifying package delivery
+  async startDeliveryNotification(data: any): Promise<void> {
+    const customerSocket = this.socketMap.get(data.customerId);
+    if(customerSocket){
+      console.log('delivery started')
+      const keys = PACKAGE_REQUEST_INFO
+      const redisData = await redisService.getToken(keys);
+
+      const {estimatedDeliveryTime}: any = redisData;
+
+      const deliveryData = {
+        ...data,
+        estimatedDeliveryTime: estimatedDeliveryTime
+      }
+      customerSocket.emit('startDeliveryNotification', deliveryData)
+    }
+  }
+
+  findSocketIdByRiderId(riderId: any): any | undefined {
+    return this.socketMap.get(riderId);
+  }  
 
   setupSocketIO(server: any): void {
     this.io = new Server(server, {
@@ -206,25 +263,46 @@ class RabbitMqService {
       logger.info(socket.id);
 
       socket.on('packageRequest', (request: any) => {
+
         if(request === null) {
-          return socket.emit('message', 'Request has already been sent.')
+          return socket.emit('requestAlreadySent', 'Request has already been sent.')
         }
 
         this.submitPackageRequest(request, socket);
       });
 
       socket.on('riderId', (riderId: any) => {
-        // const socketId = socket.id;
-        this.socketMap.set(riderId, socket);
-      
-        // const data = {
-        //   riderId: socketId
-        // };
-        // this.socketMap.set(riderId, socketId);
+        if (riderId) {
+          this.socketMap.set(riderId, socket);
+          console.log(`Socket set for riderId: ${riderId}`);
+        } else {
+          console.log('Invalid or disconnected socket.');
+        }
       });
 
       socket.on('customerId', (customerId: any) => {
-        this.socketMap.set(customerId, socket)
+        if (customerId) {
+          this.socketMap.set(customerId, socket)
+          console.log(`Socket ${socket.id} set for customerId: ${customerId}`);
+        } else {
+          console.log('Invalid or disconnected socket.');
+        }
+      });
+
+      socket.on('arrived', (data: any) => {
+        if(data) {
+          const customerSocket = this.socketMap.get(data.customerId);
+          if(customerSocket){
+            console.log('rider has arrived')
+            customerSocket.emit('riderArrivalNotification', data.riderArrived)
+          }
+        }
+      })
+
+      socket.on('startDelivery', (data: any) => {
+        if(data) {
+          this.startDeliveryNotification(data)
+        }
       })
 
       socket.on('notificationAck', (data: any) => {
@@ -232,26 +310,36 @@ class RabbitMqService {
         console.log('proof that driver received notification');
       });
 
-      socket.on('riderResponseNotificationAck', () => {
+      socket.on('riderResponseNotificationAck', (data: any) => {
         console.log('proof that customer received notification');
-      })
+          // this.riderAvailability(data.availability)
+      });
 
       socket.on('disconnect', () => {
         console.log('Client disconnected.');
         logger.info(`Client with id ${socket.id} disconnected`)
 
-        // Remove the socketMap entry when a rider disconnects
+        // Add riderId to the socketMap when a rider disconnects
         // const riderId = this.findRiderIdBySocketId(socket.id);
+        // console.log(riderId, 'rider id after disconnect')
         // if (riderId) {
-        //   this.socketMap.delete(riderId);
+        //   this.socketMap.set(riderId, socket);
         // }
+
+        // const socketId = this.findSocketIdByRiderId(customerId);
+        // console.log(riderId, 'rider id after disconnect')
+        // if (riderId) {
+        //   this.socketMap.set(riderId, socket);
+        // }
+
+        
       });
 
-      // const riderId = this.findRiderIdBySocketId(socket.id);
-      // if (riderId) {
-      //   const riderSocket = socket;
-      //   this.socketMap.set(riderId, riderSocket);
-      // }
+      const riderId = this.findRiderIdBySocketId(socket.id);
+      if (riderId) {
+        const riderSocket = socket;
+        this.socketMap.set(riderId, riderSocket);
+      }
     });
   }
 
@@ -259,14 +347,15 @@ class RabbitMqService {
     return this.io;
   }
 
-  // findRiderIdBySocketId(socketId: string): string | undefined {
-  //   for (const [riderId, id] of this.socketMap.entries()) {
-  //     if (id === socketId) {
-  //       return riderId;
-  //     }
-  //   }
-  //   return undefined;
-  // }
+  findRiderIdBySocketId(socketId: string): string | undefined {
+    for (const [riderId, id] of this.socketMap.entries()) {
+      //@ts-ignore
+      if (id === socketId) {
+        return riderId;
+      }
+    }
+    return undefined;
+  }
 }
 
 

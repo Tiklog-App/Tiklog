@@ -165,6 +165,7 @@ export default class AuthenticationController {
           confirm_password: _password,
           phone: phone,
           roles: role._id,
+          level: 1
         };
 
         const customer = await datasources.customerDAOService.create(customerValues as ICustomerModel);
@@ -210,6 +211,7 @@ export default class AuthenticationController {
       }
 
     }
+
     @TryCatch
     public async sign_in_customer(req: Request, socket: Socket<any, any, any, any>) {
       await rabbitMqService.connectToRabbitMQ()
@@ -350,6 +352,7 @@ export default class AuthenticationController {
           confirm_password: _password,
           phone: phone,
           roles: role._id,
+          level: 1
         };
    
         const rider = await datasources.riderDAOService.create(riderValues as IRiderModel);

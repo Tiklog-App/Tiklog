@@ -7,11 +7,14 @@ import { appCommonTypes } from '../@types/app-common';
 import Joi from 'joi';
 import HttpResponse = appCommonTypes.HttpResponse;
 import { appEventEmitter } from '../services/AppEventEmitter';
-import { $changePassword, $resetPassword, $savePasswordAfterReset, $updateCustomerSchema, ICustomerModel } from "../models/Customer";
+import { $changePassword, $editCustomerProfileSchema, $resetPassword, $savePasswordAfterReset, $updateCustomerSchema, ICustomerModel } from "../models/Customer";
 import {
+    ALLOWED_FILE_TYPES,
     CHANGE_CUSTOMER_PASSWORD,
     DELETE_CUSTOMER_,
     HOME_ADDRESS,
+    MAX_SIZE_IN_BYTE,
+    MESSAGES,
     OFFICE_ADDRESS,
     UPDATE_CUSTOMER_,
     UPDATE_CUSTOMER_STATUS_,
@@ -47,8 +50,20 @@ export default class CustomerController {
     @HasPermission([CUSTOMER_PERMISSION, UPDATE_CUSTOMER])
     public async updateCustomer (req: Request) {
         const customer = await this.doUpdateCustomer(req);
-    
-        appEventEmitter.emit(UPDATE_CUSTOMER_, customer)
+
+        const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: 'Successfully updated',
+            result: customer
+        };
+      
+        return Promise.resolve(response);
+    };
+
+    @TryCatch
+    @HasPermission([CUSTOMER_PERMISSION, UPDATE_CUSTOMER])
+    public async editCustomerProfile (req: Request) {
+        const customer = await this.doEditCustomerProfile(req);
 
         const response: HttpResponse<any> = {
             code: HttpStatus.OK.code,
@@ -69,9 +84,7 @@ export default class CustomerController {
     @TryCatch
     @HasPermission([MANAGE_ALL, UPDATE_CUSTOMER])
     public  async updateCustomerStatus (req: Request) {
-        const customer = await this.doUpdateCustomerStatus(req);
-
-        appEventEmitter.emit(UPDATE_CUSTOMER_STATUS_, customer)
+        await this.doUpdateCustomerStatus(req);
 
         const response: HttpResponse<any> = {
             code: HttpStatus.OK.code,
@@ -200,26 +213,33 @@ export default class CustomerController {
             });
             if(!customer) return Promise.reject(CustomAPIError.response('Customer not found', HttpStatus.BAD_REQUEST.code));
 
-            const token = Generic.generateRandomStringCrypto(10);
-            const data = {
-                token: token,
-                email: value.email,
-                customer_id: customer._id
-            };
-            const actualData = JSON.stringify(data);
+            // const token = Generic.generateRandomStringCrypto(10);
+            // const data = {
+            //     token: token,
+            //     email: value.email,
+            //     customer_id: customer._id
+            // };
+            // const actualData = JSON.stringify(data);
 
-            redisService.saveToken(`tikLog_app_${value.email}`, actualData, 900);
+            // redisService.saveToken(`tikLog_app_${value.email}`, actualData, 900);
+
+            const token = Generic.generatePasswordResetCode(6);
+
+            await datasources.customerDAOService.update(
+                {_id: customer._id},
+                {passwordResetCode: token}
+            )
 
             sendMailService.sendMail({
                 from: settings.nodemailer.email,
                 to: value.email,
                 subject: 'Password Reset',
-                text: `Your password reset link is: ${process.env.CLIENT_URL}/${customer._id}`,
+                text: `Your password reset code is: ${token}`,
             });
 
             const response: HttpResponse<any> = {
                 code: HttpStatus.OK.code,
-                message: 'If your mail is registered with us, you will receive a password reset link.'
+                message: 'If your email is registered with us, you will receive a password reset code.'
             };
         
             return Promise.resolve(response);
@@ -231,6 +251,31 @@ export default class CustomerController {
         
     };
 
+    @TryCatch
+    public async enterPasswordResetCode (req: Request) {
+
+        const { email, passwordResetCode } = req.body;
+
+        const customer = await datasources.customerDAOService.findByAny({
+            email: email
+        });
+
+        if(!customer)
+            return Promise.reject(CustomAPIError.response('Customer not found', HttpStatus.BAD_REQUEST.code));
+        console.log(customer.passwordResetCode, passwordResetCode, 'password reset code')
+        if(customer.passwordResetCode !== passwordResetCode)
+            return Promise.reject(CustomAPIError.response('Password reset code do not match', HttpStatus.BAD_REQUEST.code));
+
+
+        const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: HttpStatus.OK.value
+        };
+
+        return Promise.resolve(response);
+
+    }
+
     /**
      * @name savePassword
      * @param req
@@ -241,56 +286,57 @@ export default class CustomerController {
      * Saves the new password for the customer
      * else it returns an error
      */
+    @TryCatch
     public async savePassword (req: Request) {
-        try {
-            const customerId = req.params.customerId as string;
-            
+        // try {
+
             const { error, value } = Joi.object<ICustomerModel>($savePasswordAfterReset).validate(req.body);
 
             if(error) return Promise.reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
         
-            const customer = await datasources.customerDAOService.findById({
-                _id: customerId
+            const customer = await datasources.customerDAOService.findByAny({
+                email: value.email
             });
-            if(!customer) return Promise.reject(CustomAPIError.response('Customer not found', HttpStatus.BAD_REQUEST.code));
+            if(!customer)
+                return Promise.reject(CustomAPIError.response('Customer not found', HttpStatus.BAD_REQUEST.code));
             
-            const keys = `tikLog_app_${customer.email}`;
-            const redisData = await redisService.getToken(keys);
+            // const keys = `tikLog_app_${customer.email}`;
+            // const redisData = await redisService.getToken(keys);
 
-            if (redisData) {
-                const { customer_id }: any = redisData;
+            // if (redisData) {
+            //     const { customer_id }: any = redisData;
                 
-                if(customerId !== customer_id)
-                    return Promise.reject(CustomAPIError.response('Failed to save password, please try later', HttpStatus.BAD_REQUEST.code));
-                
-                const password = await this.passwordEncoder.encode(value.password as string);
-                const customerValues = {
-                    password: password,
-                    confirm_password: password
-                };
-               
-                await datasources.customerDAOService.update(
-                    { _id: customerId },
-                    customerValues
-                );
-
-                const response: HttpResponse<any> = {
-                    code: HttpStatus.OK.code,
-                    message: 'Password reset successfully.',
-                };
-
-                redisService.deleteRedisKey(keys)
-                return Promise.resolve(response);
-
-            } else {
-                // Token not found in Redis
-                return Promise.reject(CustomAPIError.response('Token has expired', HttpStatus.BAD_REQUEST.code))
-            }
+            // if(customerId !== customer_id)
+            //     return Promise.reject(CustomAPIError.response('Failed to save password, please try later', HttpStatus.BAD_REQUEST.code));
             
-        } catch (error) {
-            console.error(error, 'token error when getting');
-            return Promise.reject(CustomAPIError.response('Failed to retrieve token please try again later', HttpStatus.BAD_REQUEST.code))
-        }
+            const password = await this.passwordEncoder.encode(value.password as string);
+            const customerValues = {
+                password: password,
+                confirm_password: password
+            };
+            
+            await datasources.customerDAOService.update(
+                { _id: customer._id },
+                customerValues
+            );
+
+            const response: HttpResponse<any> = {
+                code: HttpStatus.OK.code,
+                message: 'Password reset successfully.',
+            };
+
+            // redisService.deleteRedisKey(keys)
+            return Promise.resolve(response);
+
+            // } else {
+            //     // Token not found in Redis
+            //     return Promise.reject(CustomAPIError.response('Token has expired', HttpStatus.BAD_REQUEST.code))
+            // }
+            
+        // } catch (error) {
+        //     console.error(error, 'token error when getting');
+        //     return Promise.reject(CustomAPIError.response('Failed to retrieve token please try again later', HttpStatus.BAD_REQUEST.code))
+        // }
     }
 
     /***
@@ -335,6 +381,19 @@ export default class CustomerController {
         if(!customer)
             return Promise.reject(CustomAPIError.response('Customer not found', HttpStatus.NOT_FOUND.code));
 
+        //find address with type home
+        const homeAddress = await datasources.customerAddressDAOService.findByAny(
+            {address_type: 'home'}
+        )
+        if(homeAddress)
+            return Promise.reject(CustomAPIError.response('Address type home already exist', HttpStatus.BAD_REQUEST.code));
+
+        const officeAddress = await datasources.customerAddressDAOService.findByAny(
+            {address_type: 'office'}
+        )
+        if(officeAddress)
+            return Promise.reject(CustomAPIError.response('Address type office already exist', HttpStatus.BAD_REQUEST.code));
+    
         const addressValues: Partial<ICustomerAddressModel> ={
             ...value,
             customer: customerId,
@@ -486,15 +545,15 @@ export default class CustomerController {
                 let _profileImageUrl = ''
                 if(profile_image) {
                     // File size validation
-                    const maxSizeInBytes = 1000 * 1024; // 1MB
+                    const maxSizeInBytes = MAX_SIZE_IN_BYTE
                     if (profile_image.size > maxSizeInBytes) {
-                        return reject(CustomAPIError.response('Image size exceeds the allowed limit', HttpStatus.BAD_REQUEST.code));
+                        return reject(CustomAPIError.response(MESSAGES.image_size_error, HttpStatus.BAD_REQUEST.code));
                     }
             
                     // File type validation
-                    const allowedFileTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+                    const allowedFileTypes = ALLOWED_FILE_TYPES;
                     if (!allowedFileTypes.includes(profile_image.mimetype as string)) {
-                        return reject(CustomAPIError.response('Invalid image format. Only JPEG, PNG, and JPG images are allowed', HttpStatus.BAD_REQUEST.code));
+                        return reject(CustomAPIError.response(MESSAGES.image_type_error, HttpStatus.BAD_REQUEST.code));
                     }
             
                     _profileImageUrl = await Generic.getImagePath({
@@ -508,7 +567,92 @@ export default class CustomerController {
                     ...value,
                     email: _email ? _email : customer.email,
                     profileImageUrl: profile_image && _profileImageUrl,
-                    phone: _phone ? _phone : customer.phone
+                    phone: _phone ? _phone : customer.phone,
+                    level: 2
+                };
+
+                const updatedCustomer = await datasources.customerDAOService.updateByAny(
+                    {_id: customerId},
+                    customerValues
+                );
+                
+                //@ts-ignore
+                return resolve(updatedCustomer);
+            })
+        })
+    }
+
+    private async doEditCustomerProfile(req: Request): Promise<HttpResponse<ICustomerModel>> {
+        return new Promise((resolve, reject) => {
+            form.parse(req, async (err, fields, files) => {
+                const customerId = req.params.customerId;
+
+                const { error, value } = Joi.object<ICustomerModel>($editCustomerProfileSchema).validate(fields);
+                if(error) return reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
+                
+                const customer = await datasources.customerDAOService.findById(customerId);
+                if(!customer) return reject(CustomAPIError.response('Customer not found', HttpStatus.NOT_FOUND.code));
+
+                const customer_email = await datasources.customerDAOService.findByAny({
+                    email: value.email
+                });
+
+                if(value.email && customer.email !== value.email){
+                    if(customer_email) {
+                        return reject(CustomAPIError.response('Customer with this email already exists', HttpStatus.NOT_FOUND.code))
+                    }
+                };
+
+                const customer_phone = await datasources.customerDAOService.findByAny({
+                    phone: value.phone
+                });
+
+                if(value.phone && customer.phone !== value.phone){
+                    if(customer_phone) {
+                        return reject(CustomAPIError.response('Customer with this phone number already exists', HttpStatus.NOT_FOUND.code))
+                    }
+                };
+
+                let _email = ''
+                if(!customer.googleId || !customer.facebookId || !customer.appleId) {
+                    _email = value.email
+                };
+
+                let _phone = ''
+                if(customer.googleId || customer.facebookId || customer.appleId) {
+                    _phone = value.phone
+                };
+
+                const profile_image = files.profileImageUrl as File;
+                const basePath = `${UPLOAD_BASE_PATH}/customer`;
+
+                let _profileImageUrl = ''
+                if(profile_image) {
+                    // File size validation
+                    const maxSizeInBytes = MAX_SIZE_IN_BYTE
+                    if (profile_image.size > maxSizeInBytes) {
+                        return reject(CustomAPIError.response(MESSAGES.image_size_error, HttpStatus.BAD_REQUEST.code));
+                    }
+            
+                    // File type validation
+                    const allowedFileTypes = ALLOWED_FILE_TYPES;
+                    if (!allowedFileTypes.includes(profile_image.mimetype as string)) {
+                        return reject(CustomAPIError.response(MESSAGES.image_type_error, HttpStatus.BAD_REQUEST.code));
+                    }
+            
+                    _profileImageUrl = await Generic.getImagePath({
+                        tempPath: profile_image.filepath,
+                        filename: profile_image.originalFilename as string,
+                        basePath,
+                    });
+                };
+
+                const customerValues = {
+                    ...value,
+                    email: _email ? _email : customer.email,
+                    profileImageUrl: profile_image && _profileImageUrl,
+                    phone: _phone ? _phone : customer.phone,
+                    level: 3
                 };
 
                 const updatedCustomer = await datasources.customerDAOService.updateByAny(

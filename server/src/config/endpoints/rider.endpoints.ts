@@ -6,12 +6,14 @@ import {
     checkRedisKey,
     deleteRiderAddressHandler,
     deleteRiderHandler,
+    editRiderProfileHandler,
     getRiderAddressesHandler,
     getRiderHandler,
     getRiderLocationHandler,
     getRidersHandler,
     getSingleRiderAddressHandler,
     resetRiderPasswordHandler,
+    riderPasswordResetCodeHandler,
     saveRiderAddressHandler,
     saveRiderLocationHandler,
     saveRiderPasswordHandler,
@@ -28,6 +30,12 @@ const riderEndpoints: RouteEndpoints = [
         method: 'put',
         path: '/rider-update/:riderId',
         handler: updateRiderHandler
+    },
+    {
+        name: 'edit rider profile',
+        method: 'put',
+        path: '/edit-rider-profile/:riderId',
+        handler: editRiderProfileHandler
     },
     {
         name: 'update rider status',
@@ -56,14 +64,20 @@ const riderEndpoints: RouteEndpoints = [
     {
         name: 'save rider password',
         method: 'put',
-        path: '/password-reset-rider/save-password/:riderId',
+        path: '/password-reset-rider/save-password',
         handler: saveRiderPasswordHandler
     },
     {
         name: 'reset rider password',
-        method: 'get',
+        method: 'post',
         path: '/password-reset-rider',
         handler: resetRiderPasswordHandler
+    },
+    {
+        name: 'rider password reset code',
+        method: 'post',
+        path: '/rider-password-reset-code',
+        handler: riderPasswordResetCodeHandler
     },
     {
         name: 'fetch riders',

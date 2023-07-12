@@ -12,6 +12,8 @@ import QueueEvents = appCommonTypes.QueueEvents;
       404: 'Not Found. Please Contact Support.',
       500: 'Something Went Wrong. Please Contact Support.',
     },
+    image_size_error: 'Image size exceeds the allowed limit',
+    image_type_error: 'Invalid image format. Only JPEG, PNG, and JPG images are allowed'
   };
 
   export const LOG_LEVEL_COLORS = {
@@ -84,3 +86,6 @@ import QueueEvents = appCommonTypes.QueueEvents;
   export const UPDATE_VEHICLE = 'event:UPDATE_VEHICLE';
   
   export const PAYMENT_CHANNELS = ['card', 'bank', 'ussd', 'qr', 'mobile_money', 'bank_transfer', 'eft'];
+
+  export const MAX_SIZE_IN_BYTE = 1000 * 1024; // 1MB
+  export const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/jpg'];

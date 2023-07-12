@@ -3,6 +3,7 @@ import RouteEndpoints = appCommonTypes.RouteEndpoints;
 import {
     addToWalletHandler,
     getCustomerTransactionsHandler,
+    getTransactionByRefHandler,
     getTransactionsHandler,
     initTransactionCallbackHandler,
     updateTransactionHandler
@@ -18,13 +19,13 @@ const transactionEndpoints: RouteEndpoints = [
     {
         name: 'paystack init transaction callback',
         method: 'get',
-        path: '/transactions/initialize',
+        path: '/transaction/initialize',
         handler: initTransactionCallbackHandler
     },
     {
         name: 'update transaction',
-        method: 'patch',
-        path: '/transactions',
+        method: 'put',
+        path: '/update-transactions',
         handler: updateTransactionHandler
     },
     {
@@ -38,6 +39,12 @@ const transactionEndpoints: RouteEndpoints = [
         method: 'get',
         path: '/transactions',
         handler: getTransactionsHandler
+    },
+    {
+        name: 'get transaction by ref',
+        method: 'post',
+        path: '/transaction-ref',
+        handler: getTransactionByRefHandler
     }
 ];
 

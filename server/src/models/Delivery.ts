@@ -31,7 +31,8 @@ interface IDelivery {
   riderPhone: string,
   rider: mongoose.Types.ObjectId,
   customer: mongoose.Types.ObjectId,
-  estimatedDeliveryTime: string
+  estimatedDeliveryTime: string,
+  deliveryRefNumber: string
 };
 
 const deliverySchema = new Schema<IDelivery>({
@@ -78,7 +79,8 @@ const deliverySchema = new Schema<IDelivery>({
   riderPhone: { type: String },
   rider: { type: Schema.Types.ObjectId, ref: 'Rider' },
   customer: { type: Schema.Types.ObjectId, ref: 'Customer' },
-  estimatedDeliveryTime: { type: String }
+  estimatedDeliveryTime: { type: String },
+  deliveryRefNumber: { type: String }
 });
 
 deliverySchema.index({ senderLocation: '2dsphere' });

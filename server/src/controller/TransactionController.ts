@@ -46,9 +46,16 @@ export default class TransactionController {
         if (!value)
             return Promise.reject(CustomAPIError.response(HttpStatus.BAD_REQUEST.value, HttpStatus.BAD_REQUEST.code));
 
+        if(value.amount <= 500) 
+            return Promise.reject(CustomAPIError.response('Amount is too low, you can only deposit N500 and above', HttpStatus.NOT_FOUND.code));
+
         const customer = await datasources.customerDAOService.findById(customerId);
         if(!customer)
             return Promise.reject(CustomAPIError.response('Customer does not exist', HttpStatus.NOT_FOUND.code));
+
+        if(!customer.email || !customer.phone) {
+            return Promise.reject(CustomAPIError.response('Please complete customer profile, before initiating a transaction', HttpStatus.NOT_FOUND.code));
+        }
 
         //initialize payment
         const metadata = {
@@ -68,7 +75,7 @@ export default class TransactionController {
 
         endpoint = '/transaction/initialize';
 
-        const callbackUrl = `${process.env.PAYMENT_GW_CB_URL}${endpoint}`;
+        const callbackUrl = `${process.env.PAYMENT_GW_CB_URL}/`;
         const amount = value.amount;
         let serviceCharge = 0.015 * amount;
 
@@ -103,52 +110,13 @@ export default class TransactionController {
         
         appEventEmitter.emit(INIT_TRANSACTION, { customer, data });
 
-        const findWallet = await datasources.walletDAOService.findByAny({
-            customer: customer._id
-        });
-
-        //create wallet/update wallet
-        if(!findWallet) {
-
-            const walletValue: Partial<IWalletModel> = {
-                balance: transaction.amount,
-                customer: customer._id
-            }
-
-            const wallet = await datasources.walletDAOService.create(walletValue as IWalletModel)
-
-            wallet.transactions.push(transaction._id);
-            await wallet.save();
-
-            const response: HttpResponse<IWalletModel> = {
-                code: HttpStatus.OK.code,
-                message: HttpStatus.OK.value,
-                result: wallet,
-              };
-          
-            return Promise.resolve(response);
-        
-        } else {
-            const walletValue = {
-                balance: findWallet.balance + transaction.amount
-            }
-
-            const wallet = await datasources.walletDAOService.updateByAny(
-                {_id: findWallet._id},
-                walletValue
-            );
-
-            wallet?.transactions.push(transaction._id);
-            await wallet?.save()
-
-            const response: HttpResponse<IWalletModel> = {
-                code: HttpStatus.OK.code,
-                message: HttpStatus.OK.value,
-                result: wallet,
-              };
-          
-            return Promise.resolve(response);
-        }
+        const response: HttpResponse<ITransactionModel> = {
+            code: HttpStatus.OK.code,
+            message: HttpStatus.OK.value,
+            result: transaction,
+          };
+      
+        return Promise.resolve(response);
 
     };
 
@@ -163,7 +131,7 @@ export default class TransactionController {
         const { reference } = req.query as unknown as { reference: string };
 
         const transaction = await datasources.transactionDAOService.findByAny({
-            where: { reference },
+           reference: reference
         });
         
         if (!transaction) {
@@ -184,6 +152,37 @@ export default class TransactionController {
         const axiosResponse = await axiosClient.get(endpoint);
 
         const data = axiosResponse.data.data;
+
+        const findWallet = await datasources.walletDAOService.findByAny({
+            customer: customer
+        });
+
+        // create wallet/update wallet
+        if(!findWallet) {
+
+            const walletValue: Partial<IWalletModel> = {
+                balance: transaction.amount,
+                customer: customer
+            }
+
+            const wallet = await datasources.walletDAOService.create(walletValue as IWalletModel)
+
+            wallet.transactions.push(transaction._id);
+            await wallet.save();
+        
+        } else {
+            const walletValue = {
+                balance: findWallet.balance + transaction.amount
+            }
+
+            const wallet = await datasources.walletDAOService.updateByAny(
+                {_id: findWallet._id},
+                walletValue
+            );
+
+            wallet?.transactions.push(transaction._id);
+            await wallet?.save();
+        }
         
         const $transaction = {
             reference: data.reference,
@@ -201,7 +200,11 @@ export default class TransactionController {
             type: transaction.type,
         };
 
-        appEventEmitter.emit(VERIFY_TRANSACTION, { customer, transaction: $transaction });
+        // appEventEmitter.emit(VERIFY_TRANSACTION, { customer, transaction: $transaction });
+        await datasources.transactionDAOService.update(
+            {_id: transaction._id},
+            $transaction
+        );
 
         const response: HttpResponse<void> = {
             code: HttpStatus.OK.code,
@@ -277,6 +280,23 @@ export default class TransactionController {
             code: HttpStatus.OK.code,
             message: HttpStatus.OK.value,
             results: transactions 
+        };
+
+        return Promise.resolve(response);
+    }
+
+    @TryCatch
+    @HasPermission([CUSTOMER_PERMISSION])
+    public async getTransactionsByRef(req: Request) {
+        const { reference } = req.body;
+        const transaction = await datasources.transactionDAOService.findByAny({
+            reference: reference
+        });
+
+        const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: HttpStatus.OK.value,
+            result: transaction
         };
 
         return Promise.resolve(response);

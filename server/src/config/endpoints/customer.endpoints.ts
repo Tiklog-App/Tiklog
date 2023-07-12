@@ -14,7 +14,9 @@ import {
     getCustomerAddressesHandler,
     getSingleCustomerAddressHandler,
     updateCustomerAddressHandler,
-    deleteCustomerAddressHandler
+    deleteCustomerAddressHandler,
+    editCustomerProfileHandler,
+    customerPasswordResetCodeHandler
 } from '../../routes/customerRoute';
 
  const customerEndpoints: RouteEndpoints = [
@@ -23,6 +25,12 @@ import {
         method: 'put',
         path: '/customer-update/:customerId',
         handler: updateCustomerHandler
+    },
+    {
+        name: 'edit customer profile',
+        method: 'put',
+        path: '/edit-customer-profile/:customerId',
+        handler: editCustomerProfileHandler
     },
     {
         name: 'update customer status',
@@ -51,14 +59,20 @@ import {
     {
         name: 'save customer password',
         method: 'put',
-        path: '/password-reset/save-password/:customerId',
+        path: '/password-reset/save-password',
         handler: saveCustomerPasswordHandler
     },
     {
         name: 'reset customer password',
-        method: 'get',
+        method: 'post',
         path: '/password-reset-customer',
         handler: resetCustomerPasswordHandler
+    },
+    {
+        name: 'customer password reset code',
+        method: 'post',
+        path: '/customer-password-reset-code',
+        handler: customerPasswordResetCodeHandler
     },
     {
         name: 'fetch customers',

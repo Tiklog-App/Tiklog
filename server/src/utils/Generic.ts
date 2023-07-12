@@ -171,6 +171,18 @@ export default class Generic {
     return randomString;
   }
 
+  public static generatePasswordResetCode(limit: number) {
+    const letters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZ';
+    const letterCount = letters.length;
+    const randomBytes = crypto.randomBytes(limit);
+    let randomString = '';
+    for (let i = 0; i < limit; i++) {
+      const randomNum = randomBytes[i] % letterCount;
+      randomString += letters[randomNum];
+    }
+    return randomString;
+  }
+
   /**
    * @name randomize
    * @description generate random chars (string,numbers,special characters, or mixed)

@@ -4,7 +4,7 @@ import Joi from 'joi';
 interface ICustomerAddress {
     address_type: string;
     address_one: string;
-    address_two: string;
+    address_two: string | null;
     country: string;
     state: string;
     city: string;
@@ -15,7 +15,7 @@ interface ICustomerAddress {
 const customerAddressSchema = new Schema<ICustomerAddress>({
     address_type: { type: String },
     address_one: { type: String },
-    address_two: { type: String },
+    address_two: { type: String, allowNull: true },
     country: { type: String },
     state: { type: String },
     city: { type: String },

@@ -12,6 +12,12 @@ export const updateRiderHandler = authenticateRouteWrapper( async (req, res) => 
     res.status(response.code).json(response);
 });
 
+export const editRiderProfileHandler = authenticateRouteWrapper( async (req, res) =>  {
+    const response = await riderController.editRiderProfile(req);
+
+    res.status(response.code).json(response);
+});
+
 export const updateRiderStatusHandler = authenticateRouteWrapper( async (req, res) =>  {
     const response = await riderController.updateRiderStatus(req);
 
@@ -39,6 +45,13 @@ export const resetRiderPasswordHandler = async (req: Request, res: Response) => 
 
 export const saveRiderPasswordHandler = async (req: Request, res: Response) =>  {
     const response = await riderController.savePassword(req);
+
+    //@ts-ignore
+    res.status(response.code).json(response);
+};
+
+export const riderPasswordResetCodeHandler = async (req: Request, res: Response) =>  {
+    const response = await riderController.enterPasswordResetCode(req);
 
     //@ts-ignore
     res.status(response.code).json(response);

@@ -12,10 +12,10 @@ import RedisService from "../services/RedisService";
 import SendMailService from "../services/SendMailService";
 import Generic from "../utils/Generic";
 import formidable, { File } from 'formidable';
-import { CHANGE_RIDER_PASSWORD, DELETE_RIDER_, HOME_ADDRESS, OFFICE_ADDRESS, RIDER_STATUS_OFFLINE, RIDER_STATUS_ONLINE, RIDER_STATUS_PENDING, UPDATE_RIDER_, UPDATE_RIDER_STATUS_, UPLOAD_BASE_PATH } from "../config/constants";
+import { ALLOWED_FILE_TYPES, CHANGE_RIDER_PASSWORD, MAX_SIZE_IN_BYTE, MESSAGES, RIDER_STATUS_OFFLINE, RIDER_STATUS_ONLINE, RIDER_STATUS_PENDING, UPLOAD_BASE_PATH } from "../config/constants";
 import settings, { CUSTOMER_PERMISSION, DELETE_CUSTOMER, MANAGE_ALL, MANAGE_SOME, READ_RIDER, RIDER_PERMISSION } from "../config/settings";
 import { UPDATE_RIDER } from "../config/settings";
-import { $changePassword, $resetPassword, $savePasswordAfterReset, $updateRiderSchema, IRiderModel } from "../models/Rider";
+import { $changePassword, $editRiderProfileSchema, $resetPassword, $savePasswordAfterReset, $updateRiderSchema, IRiderModel } from "../models/Rider";
 import { $saveRiderAddress, $updateRiderAddress, IRiderAddressModel } from "../models/RiderAddress";
 import { IRiderLocationModel } from "../models/RiderLocation";
 
@@ -41,8 +41,20 @@ export default class RiderController {
      @HasPermission([RIDER_PERMISSION, UPDATE_RIDER])
      public async updateRider (req: Request) {
          const rider = await this.doUpdateRider(req);
-     
-         appEventEmitter.emit(UPDATE_RIDER_, rider)
+ 
+         const response: HttpResponse<any> = {
+             code: HttpStatus.OK.code,
+             message: 'Successfully updated',
+             result: rider
+         };
+       
+         return Promise.resolve(response);
+     };
+
+     @TryCatch
+     @HasPermission([RIDER_PERMISSION, UPDATE_RIDER])
+     public async editRiderProfile (req: Request) {
+         const rider = await this.doEditRiderProfile(req);
  
          const response: HttpResponse<any> = {
              code: HttpStatus.OK.code,
@@ -65,8 +77,6 @@ export default class RiderController {
     public  async updateRiderStatus (req: Request) {
         const rider = await this.doUpdateRiderStatus(req);
 
-        appEventEmitter.emit(UPDATE_RIDER_STATUS_, rider)
-
         const response: HttpResponse<any> = {
             code: HttpStatus.OK.code,
             message: 'Successfully updated status'
@@ -85,9 +95,7 @@ export default class RiderController {
      @TryCatch
      @HasPermission([MANAGE_ALL, DELETE_CUSTOMER])
      public  async deleteRider (req: Request) {
-         const rider = await this.doDeleteRider(req);
- 
-         appEventEmitter.emit(DELETE_RIDER_, rider)
+         await this.doDeleteRider(req);
  
          const response: HttpResponse<any> = {
              code: HttpStatus.OK.code,
@@ -289,26 +297,31 @@ export default class RiderController {
             });
             if(!rider) return Promise.reject(CustomAPIError.response('Rider not found', HttpStatus.BAD_REQUEST.code));
 
-            const token = Generic.generateRandomStringCrypto(10);
-            const data = {
-                token: token,
-                email: value.email,
-                rider_id: rider._id
-            };
-            const actualData = JSON.stringify(data);
+            // const token = Generic.generateRandomStringCrypto(10);
+            // const data = {
+            //     token: token,
+            //     email: value.email,
+            //     rider_id: rider._id
+            // };
+            // const actualData = JSON.stringify(data);
 
-            redisService.saveToken(`tikLog_app_${value.email}`, actualData, 900);
+            // redisService.saveToken(`tikLog_app_${value.email}`, actualData, 900);
+            const token = Generic.generatePasswordResetCode(6);
+            await datasources.riderDAOService.update(
+                {_id: rider._id},
+                {passwordResetCode: token}
+            )
 
             sendMailService.sendMail({
                 from: settings.nodemailer.email,
                 to: value.email,
                 subject: 'Password Reset',
-                text: `Your password reset link is: ${process.env.CLIENT_URL}/${rider._id}`,
+                text: `Your password reset code is: ${token}`,
             });
 
             const response: HttpResponse<any> = {
                 code: HttpStatus.OK.code,
-                message: 'If your mail is registered with us, you will receive a password reset link.'
+                message: 'If your email is registered with us, you will receive a password reset code.'
             };
         
             return Promise.resolve(response);
@@ -320,6 +333,31 @@ export default class RiderController {
         
     };
 
+    @TryCatch
+    public async enterPasswordResetCode (req: Request) {
+
+        const { email, passwordResetCode } = req.body;
+
+        const rider = await datasources.riderDAOService.findByAny({
+            email: email
+        });
+
+        if(!rider)
+            return Promise.reject(CustomAPIError.response('Rider not found', HttpStatus.BAD_REQUEST.code));
+
+        if(rider.passwordResetCode !== passwordResetCode)
+            return Promise.reject(CustomAPIError.response('Password reset code do not match', HttpStatus.BAD_REQUEST.code));
+
+
+        const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: HttpStatus.OK.value
+        };
+
+        return Promise.resolve(response);
+
+    }
+
      /**
      * @name savePassword
      * @param req
@@ -330,27 +368,26 @@ export default class RiderController {
      * Saves the new password for the rider
      * else it returns an error
      */
+    @TryCatch
      public async savePassword (req: Request) {
-        try {
-            const riderId = req.params.riderId as string;
-            
+        // try {
             const { error, value } = Joi.object<IRiderModel>($savePasswordAfterReset).validate(req.body);
 
             if(error) return Promise.reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
         
-            const rider = await datasources.riderDAOService.findById({
-                _id: riderId
+            const rider = await datasources.riderDAOService.findByAny({
+                email: value.email
             });
             if(!rider) return Promise.reject(CustomAPIError.response('Rider not found', HttpStatus.BAD_REQUEST.code));
             
-            const keys = `tikLog_app_${rider.email}`;
-            const redisData = await redisService.getToken(keys);
+            // const keys = `tikLog_app_${rider.email}`;
+            // const redisData = await redisService.getToken(keys);
 
-            if (redisData) {
-                const { rider_id }: any = redisData;
+            // if (redisData) {
+            //     const { rider_id }: any = redisData;
                 
-                if(riderId !== rider_id)
-                    return Promise.reject(CustomAPIError.response('Failed to save password, please try later', HttpStatus.BAD_REQUEST.code));
+            //     if(riderId !== rider_id)
+            //         return Promise.reject(CustomAPIError.response('Failed to save password, please try later', HttpStatus.BAD_REQUEST.code));
                 
                 const password = await this.passwordEncoder.encode(value.password as string);
                 const riderValues = {
@@ -359,7 +396,7 @@ export default class RiderController {
                 };
                
                 await datasources.riderDAOService.update(
-                    { _id: riderId },
+                    { _id: rider._id },
                     riderValues
                 );
 
@@ -368,18 +405,18 @@ export default class RiderController {
                     message: 'Password reset successfully.',
                 };
 
-                redisService.deleteRedisKey(keys)
+                // redisService.deleteRedisKey(keys)
                 return Promise.resolve(response);
 
-            } else {
-                // Token not found in Redis
-                return Promise.reject(CustomAPIError.response('Token has expired', HttpStatus.BAD_REQUEST.code))
-            }
+            // } else {
+            //     // Token not found in Redis
+            //     return Promise.reject(CustomAPIError.response('Token has expired', HttpStatus.BAD_REQUEST.code))
+            // }
             
-        } catch (error) {
-            console.error(error, 'token error when getting');
-            return Promise.reject(CustomAPIError.response('Failed to retrieve token please try again later', HttpStatus.BAD_REQUEST.code))
-        }
+        // } catch (error) {
+        //     console.error(error, 'token error when getting');
+        //     return Promise.reject(CustomAPIError.response('Failed to retrieve token please try again later', HttpStatus.BAD_REQUEST.code))
+        // }
     }
 
     /***
@@ -637,15 +674,15 @@ export default class RiderController {
                 let _profileImageUrl = '';
                 if(profile_image) {
                     // File size validation
-                    const maxSizeInBytes = 1000 * 1024; // 1MB
+                    const maxSizeInBytes = MAX_SIZE_IN_BYTE
                     if (profile_image.size > maxSizeInBytes) {
-                        return reject(CustomAPIError.response('Image size exceeds the allowed limit', HttpStatus.BAD_REQUEST.code));
+                        return reject(CustomAPIError.response(MESSAGES.image_size_error, HttpStatus.BAD_REQUEST.code));
                     }
             
                     // File type validation
-                    const allowedFileTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+                    const allowedFileTypes = ALLOWED_FILE_TYPES;
                     if (!allowedFileTypes.includes(profile_image.mimetype as string)) {
-                        return reject(CustomAPIError.response('Invalid image format. Only JPEG, PNG, and JPG images are allowed', HttpStatus.BAD_REQUEST.code));
+                        return reject(CustomAPIError.response(MESSAGES.image_type_error, HttpStatus.BAD_REQUEST.code));
                     }
             
                     _profileImageUrl = await Generic.getImagePath({
@@ -659,7 +696,93 @@ export default class RiderController {
                     ...value,
                     email: _email ? _email : rider.email,
                     profileImageUrl: profile_image && _profileImageUrl,
-                    phone: _phone ? _phone : rider.phone
+                    phone: _phone ? _phone : rider.phone,
+                    level: 2
+                };
+
+                const updatedRider = await datasources.riderDAOService.updateByAny(
+                    {_id: riderId},
+                    riderValues
+                );
+                
+                //@ts-ignore
+                return resolve(updatedRider);
+            })
+        })
+    };
+
+    private async doEditRiderProfile(req: Request): Promise<HttpResponse<IRiderModel>> {
+        return new Promise((resolve, reject) => {
+            form.parse(req, async (err, fields, files) => {
+
+                const riderId = req.params.riderId;
+
+                const { error, value } = Joi.object<IRiderModel>($editRiderProfileSchema).validate(fields);
+                if(error) return reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
+                
+                const rider = await datasources.riderDAOService.findById(riderId);
+                if(!rider) return reject(CustomAPIError.response('Rider not found', HttpStatus.NOT_FOUND.code));
+
+                const rider_email = await datasources.riderDAOService.findByAny({
+                    email: value.email
+                });
+
+                if(value.email && rider.email !== value.email){
+                    if(rider_email) {
+                        return reject(CustomAPIError.response('Rider with this email already exists', HttpStatus.NOT_FOUND.code))
+                    }
+                };
+
+                const rider_phone = await datasources.riderDAOService.findByAny({
+                    phone: value.phone
+                });
+
+                if(value.phone && rider.phone !== value.phone){
+                    if(rider_phone) {
+                        return reject(CustomAPIError.response('Rider with this phone number already exists', HttpStatus.NOT_FOUND.code))
+                    }
+                };
+
+                let _email = ''
+                if(!rider.googleId || !rider.facebookId) {
+                    _email = value.email
+                };
+
+                let _phone = ''
+                if(rider.googleId || rider.facebookId) {
+                    _phone = value.phone
+                };
+
+                const profile_image = files.profileImageUrl as File;
+                const basePath = `${UPLOAD_BASE_PATH}/rider`;
+
+                let _profileImageUrl = '';
+                if(profile_image) {
+                    // File size validation
+                    const maxSizeInBytes = MAX_SIZE_IN_BYTE
+                    if (profile_image.size > maxSizeInBytes) {
+                        return reject(CustomAPIError.response(MESSAGES.image_size_error, HttpStatus.BAD_REQUEST.code));
+                    }
+            
+                    // File type validation
+                    const allowedFileTypes = ALLOWED_FILE_TYPES;
+                    if (!allowedFileTypes.includes(profile_image.mimetype as string)) {
+                        return reject(CustomAPIError.response(MESSAGES.image_type_error, HttpStatus.BAD_REQUEST.code));
+                    }
+            
+                    _profileImageUrl = await Generic.getImagePath({
+                        tempPath: profile_image.filepath,
+                        filename: profile_image.originalFilename as string,
+                        basePath,
+                    });
+                };
+
+                const riderValues = {
+                    ...value,
+                    email: _email ? _email : rider.email,
+                    profileImageUrl: profile_image && _profileImageUrl,
+                    phone: _phone ? _phone : rider.phone,
+                    level: 3
                 };
 
                 const updatedRider = await datasources.riderDAOService.updateByAny(

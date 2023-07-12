@@ -52,5 +52,7 @@ export const packageReqHandler = async (req: Request, res: Response, socket: Soc
 };
 
 export const driverResHandler = async (req: Request, res: Response) =>  {
-    await deliveryController.sendDriverResponse(req);
+    const response = await deliveryController.sendDriverResponse(req);
+
+    res.status(response.code).json(response);
 };
