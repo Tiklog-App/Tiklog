@@ -39,3 +39,9 @@ export const getTransactionByRefHandler = authenticateRouteWrapper(async (req, r
 
     res.status(response.code).json(response);
 });
+
+export const getCustomerWalletHandler = authenticateRouteWrapper(async (req, res) => {
+    const response = await transactionController.getCustomerWallet(req);
+
+    res.status(response.code).json(response);
+});

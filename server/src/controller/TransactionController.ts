@@ -301,4 +301,24 @@ export default class TransactionController {
 
         return Promise.resolve(response);
     }
+
+    @TryCatch
+    @HasPermission([CUSTOMER_PERMISSION])
+    public async getCustomerWallet(req: Request) {
+
+        //@ts-ignore
+        const customerId = req.user._id 
+        ;
+        const wallet = await datasources.walletDAOService.findByAny({
+            customer: customerId
+        });
+
+        const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: HttpStatus.OK.value,
+            result: wallet
+        };
+
+        return Promise.resolve(response);
+    }
 }
