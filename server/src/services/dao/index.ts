@@ -14,6 +14,7 @@ import VehicleRepository from "../../repositories/VehicleRepository";
 import VehicleTypeRepository from "../../repositories/VehicleTypeRepository";
 import VehicleNameRepository from "../../repositories/VehicleNameRepository";
 import NotificationRepository from "../../repositories/NotificationRepository";
+import RiderLicenseRepository from "../../repositories/RiderLicenseRepository";
 
 import PermissionDAOService from "./PermissionDAOService";
 import RoleDAOService from "./RoleDAOService";
@@ -31,6 +32,7 @@ import VehicleDAOService from "./VehicleDAOService";
 import VehicleNameDAOService from "./VehicleNameDAOService";
 import VehicleTypeDAOService from "./VehicleTypeDAOService";
 import NotificationDAOService from "./NotificationDAOService";
+import RiderLicenseDAOService from "./RiderLicenseDAOService";
 
 const permissionRepository = new PermissionRepository();
 const roleRepository = new RoleRepository();
@@ -48,6 +50,7 @@ const vehicleRepository = new VehicleRepository();
 const vehicleTypeRepository = new VehicleTypeRepository();
 const vehicleNameRepository = new VehicleNameRepository();
 const notificationRepository = new NotificationRepository();
+const riderLicenseRepository = new RiderLicenseRepository();
 
 const permissionDAOService = new PermissionDAOService(permissionRepository);
 const roleDAOService = new RoleDAOService(roleRepository);
@@ -65,6 +68,7 @@ const vehicleDAOService = new VehicleDAOService(vehicleRepository);
 const vehicleNameDAOService = new VehicleNameDAOService(vehicleNameRepository);
 const vehicleTypeDAOService = new VehicleTypeDAOService(vehicleTypeRepository);
 const notificationDAOService = new NotificationDAOService(notificationRepository);
+const riderLicenseDAOService = new RiderLicenseDAOService(riderLicenseRepository);
 
 export default {
     vehicleDAOService,
@@ -82,5 +86,6 @@ export default {
     transactionDAOService,
     deliveryDAOService,
     riderAddressDAOService,
-    notificationDAOService
+    notificationDAOService,
+    riderLicenseDAOService
 }

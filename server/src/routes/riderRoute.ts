@@ -135,3 +135,33 @@ export const changeRiderOnlineHandler = authenticateRouteWrapper(async (req, res
 
     res.status(response.code).json(response);
 });
+
+export const riderLicenseHandler = authenticateRouteWrapper(async (req, res) => {
+    const response = await riderController.riderLicense(req);
+
+    res.status(response.code).json(response);
+});
+
+export const updateRiderLicenseHandler = authenticateRouteWrapper(async (req, res) => {
+    const response = await riderController.updateRiderLicense(req);
+
+    res.status(response.code).json(response);
+});
+
+export const deleteRiderLicenseHandler = authenticateRouteWrapper(async (req, res) => {
+    const response = await riderController.deleteLicense(req);
+
+    res.status(response.code).json(response);
+});
+
+export const isExpiredLicenseHandler = authenticateRouteWrapper(async (req, res) => {
+    const response = await riderController.isExpiredLicense(req);
+
+    res.status(response.code).json(response);
+});
+
+export const fetchRiderLicensesHandler = authenticateRouteWrapper(async (req, res) => {
+    const response = await riderController.fetchRiderLicenses(req);
+
+    res.status(response.code).json(response);
+});

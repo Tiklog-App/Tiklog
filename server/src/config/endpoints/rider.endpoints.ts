@@ -6,13 +6,17 @@ import {
     checkRedisKey,
     deleteRiderAddressHandler,
     deleteRiderHandler,
+    deleteRiderLicenseHandler,
     editRiderProfileHandler,
+    fetchRiderLicensesHandler,
     getRiderAddressesHandler,
     getRiderHandler,
     getRiderLocationHandler,
     getRidersHandler,
     getSingleRiderAddressHandler,
+    isExpiredLicenseHandler,
     resetRiderPasswordHandler,
+    riderLicenseHandler,
     riderPasswordResetCodeHandler,
     saveRiderAddressHandler,
     saveRiderLocationHandler,
@@ -20,6 +24,7 @@ import {
     toggleOnlineOfflineHandler,
     updateRiderAddressHandler,
     updateRiderHandler,
+    updateRiderLicenseHandler,
     updateRiderLocationHandler,
     updateRiderStatusHandler
 } from '../../routes/riderRoute';
@@ -151,6 +156,36 @@ const riderEndpoints: RouteEndpoints = [
         path: '/rider-online-offline/:riderId',
         handler: toggleOnlineOfflineHandler
     },
+    {
+        name: 'create rider license',
+        method: 'post',
+        path: '/rider-license',
+        handler: riderLicenseHandler
+    },
+    {
+        name: 'update rider license',
+        method: 'put',
+        path: '/update-rider-license/:licenseId',
+        handler: updateRiderLicenseHandler
+    },
+    {
+        name: 'delete rider license',
+        method: 'delete',
+        path: '/delete-rider-license',
+        handler: deleteRiderLicenseHandler
+    },
+    {
+        name: 'check rider expired license',
+        method: 'put',
+        path: '/update-rider-license-expired',
+        handler: isExpiredLicenseHandler
+    },
+    {
+        name: 'fetch rider licenses',
+        method: 'get',
+        path: '/fetch-rider-licenses',
+        handler: fetchRiderLicensesHandler
+    }
 ];
 
 export default riderEndpoints;

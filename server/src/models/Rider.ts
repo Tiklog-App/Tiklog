@@ -88,7 +88,6 @@ export const $editRiderProfileSchema: Joi.SchemaMap = {
   lastName: Joi.string().label('last name'),
   email: Joi.string().label('email'),
   other_names: Joi.string().label('other names'),
-  gender: Joi.string().label('gender'),
   profileImageUrl: Joi.string().label('profile image'),
   phone: Joi.string().label('phone')
 };

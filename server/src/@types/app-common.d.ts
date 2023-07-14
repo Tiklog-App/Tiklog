@@ -70,7 +70,8 @@ export declare namespace appCommonTypes {
     | 'create_vehicle_name'
     | 'delete_vehicle_name'
     | 'read_vehicle_name'
-    | 'update_vehicle_name';
+    | 'update_vehicle_name'
+    | 'fetch_license';
 
   type AuthPayload = {
     permissions: IPermission[];

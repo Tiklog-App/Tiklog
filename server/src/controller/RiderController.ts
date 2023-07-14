@@ -13,11 +13,12 @@ import SendMailService from "../services/SendMailService";
 import Generic from "../utils/Generic";
 import formidable, { File } from 'formidable';
 import { ALLOWED_FILE_TYPES, CHANGE_RIDER_PASSWORD, MAX_SIZE_IN_BYTE, MESSAGES, RIDER_STATUS_OFFLINE, RIDER_STATUS_ONLINE, RIDER_STATUS_PENDING, UPLOAD_BASE_PATH } from "../config/constants";
-import settings, { CUSTOMER_PERMISSION, DELETE_CUSTOMER, MANAGE_ALL, MANAGE_SOME, READ_RIDER, RIDER_PERMISSION } from "../config/settings";
+import settings, { CUSTOMER_PERMISSION, DELETE_CUSTOMER, FETCH_LICENSE, MANAGE_ALL, MANAGE_SOME, READ_RIDER, RIDER_PERMISSION } from "../config/settings";
 import { UPDATE_RIDER } from "../config/settings";
 import { $changePassword, $editRiderProfileSchema, $resetPassword, $savePasswordAfterReset, $updateRiderSchema, IRiderModel } from "../models/Rider";
 import { $saveRiderAddress, $updateRiderAddress, IRiderAddressModel } from "../models/RiderAddress";
 import { IRiderLocationModel } from "../models/RiderLocation";
+import { $licenseSchema, IRiderLicenseModel } from "../models/RiderLicense";
 
 const redisService = new RedisService();
 const sendMailService = new SendMailService();
@@ -75,7 +76,7 @@ export default class RiderController {
     @TryCatch
     @HasPermission([MANAGE_ALL, UPDATE_RIDER])
     public  async updateRiderStatus (req: Request) {
-        const rider = await this.doUpdateRiderStatus(req);
+        await this.doUpdateRiderStatus(req);
 
         const response: HttpResponse<any> = {
             code: HttpStatus.OK.code,
@@ -83,6 +84,106 @@ export default class RiderController {
         };
       
         return Promise.resolve(response);
+    };
+
+    @TryCatch
+    @HasPermission([RIDER_PERMISSION])
+    public async riderLicense(req: Request) {
+        const {license, rider_level}: any = await this.doCreateRiderLicense(req)
+
+        const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: rider_level === 5
+                        ? 'Verification of your license is ongoing this would take 2 working days'
+                        : HttpStatus.OK.value,
+            result: license
+        };
+      
+        return Promise.resolve(response);
+
+    };
+
+    @TryCatch
+    @HasPermission([RIDER_PERMISSION])
+    public async deleteLicense(req: Request) {
+
+        //@ts-ignore
+        const riderId = req.user._id;
+
+        const findLicense = await datasources.riderLicenseDAOService.findByAny({
+            rider: riderId
+        });
+        if(!findLicense)
+            return Promise.reject(CustomAPIError.response('License not found', HttpStatus.NOT_FOUND.code));
+
+        await datasources.riderLicenseDAOService.deleteById(findLicense._id);
+
+        const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: HttpStatus.OK.value,
+            result: 'License deleted successfully'
+        };
+      
+        return Promise.resolve(response);
+    };
+
+    @TryCatch
+    @HasPermission([RIDER_PERMISSION])
+    public async isExpiredLicense(req: Request) {
+
+        //@ts-ignore
+        const riderId = req.user._id;
+
+        const findLicense = await datasources.riderLicenseDAOService.findByAny({
+            rider: riderId
+        });
+        if(!findLicense)
+            return Promise.reject(CustomAPIError.response('License not found', HttpStatus.NOT_FOUND.code));
+
+        if(new Date(findLicense.expiryDate) <= new Date()) {
+            await datasources.riderLicenseDAOService.update(
+                { _id: findLicense._id },
+                { isExpired: true }
+            )
+        };
+
+        const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: HttpStatus.OK.value
+        };
+      
+        return Promise.resolve(response);
+        
+    }
+
+    @TryCatch
+    @HasPermission([MANAGE_ALL, FETCH_LICENSE])
+    public async fetchRiderLicenses(req: Request) {
+
+        const fetchLicenses = await datasources.riderLicenseDAOService.findAll({})
+
+        const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: HttpStatus.OK.value,
+            results: fetchLicenses
+        };
+      
+        return Promise.resolve(response);
+    }
+
+    @TryCatch
+    @HasPermission([RIDER_PERMISSION])
+    public async updateRiderLicense(req: Request) {
+        const license = await this.doUpdateRiderLicense(req)
+
+        const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: HttpStatus.OK.value,
+            result: license
+        };
+      
+        return Promise.resolve(response);
+
     };
 
      /**
@@ -467,6 +568,10 @@ export default class RiderController {
             rider: riderId
         };
 
+        await datasources.riderDAOService.update(
+            { _id: riderId },
+            { level: 5 }
+        )
         const address = await datasources.riderAddressDAOService.create(addressValues as IRiderAddressModel);
 
         const response: HttpResponse<any> = {
@@ -604,14 +709,26 @@ export default class RiderController {
         if(!rider.firstName || !rider.lastName || !rider.phone || !rider.email || !rider.gender)
             return Promise.reject(CustomAPIError.response('Please complete your profile', HttpStatus.BAD_REQUEST.code));
 
+        const riderLicense = await datasources.riderLicenseDAOService.findByAny({
+            rider: riderId
+        })
+        if(!riderLicense)
+            return Promise.reject(CustomAPIError.response('License is required to go online', HttpStatus.BAD_REQUEST.code));
+            
+
+
         let newStatus;
         let updateStatus = false;
         if (rider.status === RIDER_STATUS_ONLINE) {
             newStatus = RIDER_STATUS_OFFLINE;
         } else {
+            if(!riderLicense.isExpired)
+                return Promise.reject(CustomAPIError.response('Your vehicle license has expired please renew license', HttpStatus.BAD_REQUEST.code));
+            
             newStatus = RIDER_STATUS_ONLINE;
             updateStatus = true
         }
+
         const updatedRider = await datasources.riderDAOService.updateByAny(
             {_id: riderId},
             {status: newStatus}
@@ -624,6 +741,166 @@ export default class RiderController {
         };
 
         return Promise.resolve(response);
+    };
+
+    private async doCreateRiderLicense(req: Request): Promise<HttpResponse<IRiderLicenseModel>> {
+        return new Promise((resolve, reject) => {
+            form.parse(req, async (err, fields, files) => {
+
+                //@ts-ignore
+                const riderId = req.user._id
+
+                const { error, value } = Joi.object<IRiderLicenseModel>($licenseSchema).validate(fields);
+                if(error) return reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
+                
+                const rider = await datasources.riderDAOService.findById(riderId);
+
+                const riderLicense = await datasources.riderLicenseDAOService.findByAny(
+                    { rider: riderId }
+                );
+                if(riderLicense)
+                    return reject(CustomAPIError.response('License for this rider already exist', HttpStatus.BAD_REQUEST.code));
+                
+                const issuedDate = new Date(value.issuedDate);
+                const expiryDate = new Date(value.expiryDate);
+                if(issuedDate > expiryDate)
+                    return reject(CustomAPIError.response('License issued date can not be greater than expiry date', HttpStatus.BAD_REQUEST.code));
+
+                // find license by license number
+                const _licenseNumber = Generic.generateSlug(value.licenseNumber)
+                const licenseNumber = await datasources.riderLicenseDAOService.findByAny(
+                    { slug: _licenseNumber }
+                );
+                if(licenseNumber)
+                    return reject(CustomAPIError.response(`License number: ${_licenseNumber} already exist`, HttpStatus.BAD_REQUEST.code));
+
+                // check if image is part of the body payload
+                if(Object.keys(files).length === 0)
+                    return reject(CustomAPIError.response('License image is required', HttpStatus.BAD_REQUEST.code));
+                
+                const license_image = files.licenseImageUrl as File;
+                const basePath = `${UPLOAD_BASE_PATH}/license`;
+
+                let licenseImageUrl = ''
+                if(license_image) {
+                    // File size validation
+                    const maxSizeInBytes = MAX_SIZE_IN_BYTE
+                    if (license_image.size > maxSizeInBytes) {
+                        return reject(CustomAPIError.response(MESSAGES.image_size_error, HttpStatus.BAD_REQUEST.code));
+                    }
+            
+                    // File type validation
+                    const allowedFileTypes = ALLOWED_FILE_TYPES;
+                    if (!allowedFileTypes.includes(license_image.mimetype as string)) {
+                        return reject(CustomAPIError.response(MESSAGES.image_type_error, HttpStatus.BAD_REQUEST.code));
+                    }
+            
+                    licenseImageUrl = await Generic.getImagePath({
+                        tempPath: license_image.filepath,
+                        filename: license_image.originalFilename as string,
+                        basePath,
+                    });
+                };
+
+                const licenseValues: Partial<IRiderLicenseModel> = {
+                    ...value,
+                    licenseImageUrl: license_image && licenseImageUrl,
+                    slug: _licenseNumber,
+                    rider: riderId,
+                    isExpired: rider?.level === 5 ? true : false
+                };
+
+                if(rider && rider.level < 4) {
+                    await datasources.riderDAOService.update(
+                        { _id: riderId },
+                        { level: 4 }
+                    )
+                }
+                
+                const rider_level = rider && rider.level
+                const license = await datasources.riderLicenseDAOService.create(licenseValues as IRiderLicenseModel);
+
+                //@ts-ignore
+                return resolve({license, rider_level})
+                
+            })
+        })
+
+    };
+
+    private async doUpdateRiderLicense(req: Request): Promise<HttpResponse<IRiderLicenseModel>> {
+        return new Promise((resolve, reject) => {
+            form.parse(req, async (err, fields, files) => {
+
+                const licenseId = req.params.licenseId
+
+                const { error, value } = Joi.object<IRiderLicenseModel>($licenseSchema).validate(fields);
+                if(error) return reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
+                    
+                const rider = await datasources.riderLicenseDAOService.findById(licenseId);
+                if(!rider)
+                    return reject(CustomAPIError.response('License for this rider does not exist', HttpStatus.BAD_REQUEST.code));
+                
+                const _license = await datasources.riderLicenseDAOService.findByAny({
+                    slug: Generic.generateSlug(value.licenseNumber)
+                });
+
+                const issuedDate = new Date(value.issuedDate);
+                const expiryDate = new Date(value.expiryDate);
+                if(issuedDate > expiryDate)
+                    return reject(CustomAPIError.response('License issued date can not be greater than expiry date', HttpStatus.BAD_REQUEST.code));
+    
+                const licenseNumber = Generic.generateSlug(value.licenseNumber)
+                if(licenseNumber && _license?.slug !== licenseNumber){
+                    if(_license) {
+                        return reject(CustomAPIError.response(`License with this ${licenseNumber} already exists`, HttpStatus.NOT_FOUND.code))
+                    }
+                };
+
+                // check if image is part of the body payload
+                if(Object.keys(files).length === 0)
+                    return reject(CustomAPIError.response('License image is required', HttpStatus.BAD_REQUEST.code));
+                
+                const license_image = files.licenseImageUrl as File;
+                const basePath = `${UPLOAD_BASE_PATH}/license`;
+
+                let licenseImageUrl = ''
+                if(license_image) {
+                    // File size validation
+                    const maxSizeInBytes = MAX_SIZE_IN_BYTE
+                    if (license_image.size > maxSizeInBytes) {
+                        return reject(CustomAPIError.response(MESSAGES.image_size_error, HttpStatus.BAD_REQUEST.code));
+                    }
+            
+                    // File type validation
+                    const allowedFileTypes = ALLOWED_FILE_TYPES;
+                    if (!allowedFileTypes.includes(license_image.mimetype as string)) {
+                        return reject(CustomAPIError.response(MESSAGES.image_type_error, HttpStatus.BAD_REQUEST.code));
+                    }
+            
+                    licenseImageUrl = await Generic.getImagePath({
+                        tempPath: license_image.filepath,
+                        filename: license_image.originalFilename as string,
+                        basePath,
+                    });
+                };
+
+                const licenseValues = {
+                    ...value,
+                    licenseImageUrl: license_image && licenseImageUrl
+                };
+
+                const license = await datasources.riderLicenseDAOService.updateByAny(
+                    { _id: rider?._id },
+                    licenseValues
+                );
+
+                //@ts-ignore
+                return resolve(license)
+                
+            })
+        })
+
     };
 
     private async doUpdateRider(req: Request): Promise<HttpResponse<IRiderModel>> {
@@ -781,8 +1058,7 @@ export default class RiderController {
                     ...value,
                     email: _email ? _email : rider.email,
                     profileImageUrl: profile_image && _profileImageUrl,
-                    phone: _phone ? _phone : rider.phone,
-                    level: 3
+                    phone: _phone ? _phone : rider.phone
                 };
 
                 const updatedRider = await datasources.riderDAOService.updateByAny(

@@ -9,7 +9,10 @@ import HttpResponse = appCommonTypes.HttpResponse;
 import { appEventEmitter } from '../services/AppEventEmitter';
 import formidable, { File } from 'formidable';
 import {
+    ALLOWED_FILE_TYPES,
     CREATE_VEHICLE,
+    MAX_SIZE_IN_BYTE,
+    MESSAGES,
     UPDATE_VEHICLE,
     UPLOAD_BASE_PATH,
 } from "../config/constants";
@@ -40,8 +43,6 @@ export default class VehicleController {
     public async newVehicle(req: Request) {
         const vehicle = await this.doNewVehicle(req)
 
-        appEventEmitter.emit(CREATE_VEHICLE, vehicle)
-
         const response: HttpResponse<any> = {
             code: HttpStatus.OK.code,
             message: 'Successfully updated',
@@ -56,8 +57,6 @@ export default class VehicleController {
     @HasPermission([RIDER_PERMISSION])
     public async updateVehicle(req: Request) {
         const vehicle = await this.doUpdateVehicle(req)
-
-        appEventEmitter.emit(UPDATE_VEHICLE, vehicle)
 
         const response: HttpResponse<any> = {
             code: HttpStatus.OK.code,
@@ -288,20 +287,20 @@ export default class VehicleController {
     }
 
     private async doNewVehicle(req: Request): Promise<HttpResponse<IVehicleModel>> {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             form.parse(req, async (err, fields, files) => {
 
                 //@ts-ignore
                 const riderId = req.user._id
 
                 const { error, value } = Joi.object<IVehicleModel>($saveVehicleSchema).validate(fields);
-                if(error) return Promise.reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
+                if(error) return reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
                     
                 const _vehicle = await datasources.vehicleDAOService.findByAny({
                     rider: riderId
                 })
                 if(_vehicle)
-                    return Promise.reject(CustomAPIError.response('Vehicle already exist', HttpStatus.BAD_REQUEST.code));
+                    return reject(CustomAPIError.response('Vehicle already exist', HttpStatus.BAD_REQUEST.code));
 
                 const vehicle_image = files.vehicleImageUrl as File;
                 const basePath = `${UPLOAD_BASE_PATH}/vehicle`;
@@ -309,15 +308,15 @@ export default class VehicleController {
                 let _vehicleImageUrl = ''
                 if(vehicle_image) {
                     // File size validation
-                    const maxSizeInBytes = 1000 * 1024; // 1MB
+                    const maxSizeInBytes = MAX_SIZE_IN_BYTE
                     if (vehicle_image.size > maxSizeInBytes) {
-                        throw CustomAPIError.response('File size exceeds the allowed limit', HttpStatus.BAD_REQUEST.code);
+                        reject(CustomAPIError.response(MESSAGES.image_size_error, HttpStatus.BAD_REQUEST.code));
                     }
             
                     // File type validation
-                    const allowedFileTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+                    const allowedFileTypes = ALLOWED_FILE_TYPES;
                     if (!allowedFileTypes.includes(vehicle_image.mimetype as string)) {
-                        throw CustomAPIError.response('Invalid file format. Only JPEG, PNG, and JPG files are allowed', HttpStatus.BAD_REQUEST.code);
+                        reject(CustomAPIError.response(MESSAGES.image_type_error, HttpStatus.BAD_REQUEST.code));
                     }
             
                     _vehicleImageUrl = await Generic.getImagePath({
@@ -334,6 +333,10 @@ export default class VehicleController {
                     slug: Generic.generateSlug(value.vehicleName)
                 };
 
+                await datasources.riderDAOService.update(
+                    { _id: riderId },
+                    { level: 3 }
+                )
                 const vehicle = await datasources.vehicleDAOService.create(vehicleValues as IVehicleModel);
 
                 //@ts-ignore
@@ -345,17 +348,17 @@ export default class VehicleController {
     };
 
     private async doUpdateVehicle(req: Request): Promise<HttpResponse<IVehicleModel>> {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             form.parse(req, async (err, fields, files) => {
 
                 const vehicleId = req.params.vehicleId
 
                 const { error, value } = Joi.object<IVehicleModel>($updateVehicleSchema).validate(fields);
-                if(error) return Promise.reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
+                if(error) return reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
                     
                 const _vehicle = await datasources.vehicleDAOService.findById(vehicleId)
                 if(!_vehicle)
-                    return Promise.reject(CustomAPIError.response('Vehicle does not exist', HttpStatus.NOT_FOUND.code));
+                    return reject(CustomAPIError.response('Vehicle does not exist', HttpStatus.NOT_FOUND.code));
 
                 const vehicle_image = files.vehicleImageUrl as File;
                 const basePath = `${UPLOAD_BASE_PATH}/vehicle`;
@@ -363,15 +366,15 @@ export default class VehicleController {
                 let _vehicleImageUrl = ''
                 if(vehicle_image) {
                     // File size validation
-                    const maxSizeInBytes = 1000 * 1024; // 1MB
+                    const maxSizeInBytes = MAX_SIZE_IN_BYTE
                     if (vehicle_image.size > maxSizeInBytes) {
-                        throw CustomAPIError.response('File size exceeds the allowed limit', HttpStatus.BAD_REQUEST.code);
+                        return reject(CustomAPIError.response(MESSAGES.image_size_error, HttpStatus.BAD_REQUEST.code));
                     }
             
                     // File type validation
-                    const allowedFileTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+                    const allowedFileTypes = ALLOWED_FILE_TYPES;
                     if (!allowedFileTypes.includes(vehicle_image.mimetype as string)) {
-                        throw CustomAPIError.response('Invalid file format. Only JPEG, PNG, and JPG files are allowed', HttpStatus.BAD_REQUEST.code);
+                        return reject(CustomAPIError.response(MESSAGES.image_type_error, HttpStatus.BAD_REQUEST.code));
                     }
             
                     _vehicleImageUrl = await Generic.getImagePath({

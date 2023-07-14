@@ -39,6 +39,8 @@ export const DELETE_VEHICLE_NAME = 'delete_vehicle_name';
 export const READ_VEHICLE_NAME = 'read_vehicle_name';
 export const UPDATE_VEHICLE_NAME = 'update_vehicle_name';
 
+export const FETCH_LICENSE = 'fetch_license'
+
 const settings: AppSettings = {
   twilio: {
     twilioSid: <string>process.env.TWILIO_ACCOUNT_SID,
@@ -117,7 +119,9 @@ const settings: AppSettings = {
     CREATE_VEHICLE_NAME,
     DELETE_VEHICLE_NAME,
     READ_VEHICLE_NAME,
-    UPDATE_VEHICLE_NAME
+    UPDATE_VEHICLE_NAME,
+
+    FETCH_LICENSE
   ],
   roles: [
     'SUPER_ADMIN_ROLE',

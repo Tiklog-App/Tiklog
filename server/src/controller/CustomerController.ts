@@ -386,13 +386,14 @@ export default class CustomerController {
             {address_type: 'home'}
         )
         if(homeAddress)
-            return Promise.reject(CustomAPIError.response('Address type home already exist', HttpStatus.BAD_REQUEST.code));
+            return Promise.reject(CustomAPIError.response('Address of type home already exist', HttpStatus.BAD_REQUEST.code));
 
+        //find address with type office
         const officeAddress = await datasources.customerAddressDAOService.findByAny(
             {address_type: 'office'}
         )
         if(officeAddress)
-            return Promise.reject(CustomAPIError.response('Address type office already exist', HttpStatus.BAD_REQUEST.code));
+            return Promise.reject(CustomAPIError.response('Address of type office already exist', HttpStatus.BAD_REQUEST.code));
     
         const addressValues: Partial<ICustomerAddressModel> ={
             ...value,
@@ -403,6 +404,10 @@ export default class CustomerController {
                             : false
         };
 
+        await datasources.customerDAOService.update(
+            { _id: customerId },
+            { level: 3 }
+        )
         const address = await datasources.customerAddressDAOService.create(addressValues as ICustomerAddressModel);
 
         const response: HttpResponse<any> = {
@@ -651,8 +656,7 @@ export default class CustomerController {
                     ...value,
                     email: _email ? _email : customer.email,
                     profileImageUrl: profile_image && _profileImageUrl,
-                    phone: _phone ? _phone : customer.phone,
-                    level: 3
+                    phone: _phone ? _phone : customer.phone
                 };
 
                 const updatedCustomer = await datasources.customerDAOService.updateByAny(
