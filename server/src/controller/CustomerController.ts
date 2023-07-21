@@ -152,11 +152,27 @@ export default class CustomerController {
     @HasPermission([MANAGE_ALL, MANAGE_SOME, READ_CUSTOMER])
     public  async customers (req: Request) {
 
+        let activeFilter = false;
+        let _filter = '';
+
+        if (req.query.active === 'true') {
+            activeFilter = true;
+            _filter = 't'
+        } else if (req.query.active === 'false') {
+            activeFilter = false;
+            _filter = 't'
+        }
+    
+        const filter = _filter === ''
+                        ? {} 
+                        : activeFilter ? { active: true } : { active: false };
+        
         const options = {
-            sort: { createdAt: -1 }
+            search: req.query.search,
+            searchFields: ['firstName', 'lastName', 'gender', 'other_names']
         };
 
-        const customers = await datasources.customerDAOService.findAll(options);
+        const customers = await datasources.customerDAOService.findAll(filter, options);
 
         if(!customers) return Promise.reject(CustomAPIError.response('No customer is available at this time', HttpStatus.BAD_REQUEST.code));
 
@@ -180,8 +196,6 @@ export default class CustomerController {
     @HasPermission([CUSTOMER_PERMISSION, UPDATE_CUSTOMER])
     public  async changePassword (req: Request) {
         const customer = await this.doChangePassword(req);
-
-        appEventEmitter.emit(CHANGE_CUSTOMER_PASSWORD, customer)
 
         const response: HttpResponse<ICustomerModel> = {
             code: HttpStatus.OK.code,
@@ -223,11 +237,11 @@ export default class CustomerController {
 
             // redisService.saveToken(`tikLog_app_${value.email}`, actualData, 900);
 
-            const token = Generic.generatePasswordResetCode(6);
+            const token = Generic.generatePasswordResetCode(4);
 
             await datasources.customerDAOService.update(
                 {_id: customer._id},
-                {passwordResetCode: token}
+                {passwordResetCode: +token}
             )
 
             sendMailService.sendMail({
@@ -383,16 +397,16 @@ export default class CustomerController {
 
         //find address with type home
         const homeAddress = await datasources.customerAddressDAOService.findByAny(
-            {address_type: 'home'}
+            {address_type: HOME_ADDRESS}
         )
-        if(homeAddress)
+        if(homeAddress && value.address_type === HOME_ADDRESS)
             return Promise.reject(CustomAPIError.response('Address of type home already exist', HttpStatus.BAD_REQUEST.code));
 
         //find address with type office
         const officeAddress = await datasources.customerAddressDAOService.findByAny(
-            {address_type: 'office'}
+            {address_type: OFFICE_ADDRESS}
         )
-        if(officeAddress)
+        if(officeAddress && value.address_type === OFFICE_ADDRESS)
             return Promise.reject(CustomAPIError.response('Address of type office already exist', HttpStatus.BAD_REQUEST.code));
     
         const addressValues: Partial<ICustomerAddressModel> ={

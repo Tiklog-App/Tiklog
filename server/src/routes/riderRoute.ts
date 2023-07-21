@@ -165,3 +165,9 @@ export const fetchRiderLicensesHandler = authenticateRouteWrapper(async (req, re
 
     res.status(response.code).json(response);
 });
+
+export const updateRiderBankDetailHandler = authenticateRouteWrapper(async (req, res) => {
+    const response = await riderController.bankDetails(req);
+
+    res.status(response.code).json(response);
+});

@@ -71,7 +71,11 @@ export declare namespace appCommonTypes {
     | 'delete_vehicle_name'
     | 'read_vehicle_name'
     | 'update_vehicle_name'
-    | 'fetch_license';
+    | 'fetch_license'
+    | 'read_admin_fees'
+    | 'read_payment_request'
+    | 'fetch_permissions'
+    | 'make_payment';
 
   type AuthPayload = {
     permissions: IPermission[];
@@ -120,6 +124,9 @@ export declare namespace appCommonTypes {
       twilioAuthToken: string;
       phoneNumber: string;
     };
+    paystack: {
+      apiKey: string
+    }
     nodemailer: {
       email: string;
       password: string;

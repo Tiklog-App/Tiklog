@@ -3,7 +3,6 @@ import AuthenticationController from "../controller/AuthenticationController";
 import PasswordEncoder from "../utils/PasswordEncoder";
 import settings from "../config/settings";
 import authenticateRouteWrapper from "../middleware/authenticateRouteWrapper";
-import { Socket } from "socket.io";
 
 const passwordEncoder = new PasswordEncoder();
 const authController = new AuthenticationController(passwordEncoder);
@@ -45,8 +44,8 @@ export const signInHandler_Admin = async (req: Request, res: Response) => {
     res.status(response.code).json(response)
 };
 
-export const signInHandler_Customer = async (req: Request, res: Response, socket: Socket) => {
-    const response = await authController.sign_in_customer(req, socket);
+export const signInHandler_Customer = async (req: Request, res: Response) => {
+    const response = await authController.sign_in_customer(req);
 
     res.cookie(settings.cookie.name, response.result, {
         sameSite: 'none',

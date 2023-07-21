@@ -41,6 +41,12 @@ export const deleteDeliveryHandler = authenticateRouteWrapper( async (req, res) 
     res.status(response.code).json(response);
 });
 
+export const cancelDeliveryHandler = authenticateRouteWrapper( async (req, res) =>  {
+    const response = await deliveryController.cancelDelivery(req);
+
+    res.status(response.code).json(response);
+});
+
 export const findRidersHandler = authenticateRouteWrapper( async (req, res) =>  {
     const response = await deliveryController.findRiders(req);
 

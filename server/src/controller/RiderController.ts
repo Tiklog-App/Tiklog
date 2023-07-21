@@ -15,7 +15,7 @@ import formidable, { File } from 'formidable';
 import { ALLOWED_FILE_TYPES, CHANGE_RIDER_PASSWORD, MAX_SIZE_IN_BYTE, MESSAGES, RIDER_STATUS_OFFLINE, RIDER_STATUS_ONLINE, RIDER_STATUS_PENDING, UPLOAD_BASE_PATH } from "../config/constants";
 import settings, { CUSTOMER_PERMISSION, DELETE_CUSTOMER, FETCH_LICENSE, MANAGE_ALL, MANAGE_SOME, READ_RIDER, RIDER_PERMISSION } from "../config/settings";
 import { UPDATE_RIDER } from "../config/settings";
-import { $changePassword, $editRiderProfileSchema, $resetPassword, $savePasswordAfterReset, $updateRiderSchema, IRiderModel } from "../models/Rider";
+import { $bankDetailRider, $changePassword, $editRiderProfileSchema, $resetPassword, $savePasswordAfterReset, $updateRiderSchema, IRiderModel } from "../models/Rider";
 import { $saveRiderAddress, $updateRiderAddress, IRiderAddressModel } from "../models/RiderAddress";
 import { IRiderLocationModel } from "../models/RiderLocation";
 import { $licenseSchema, IRiderLicenseModel } from "../models/RiderLicense";
@@ -64,6 +64,39 @@ export default class RiderController {
          };
        
          return Promise.resolve(response);
+     };
+
+     @TryCatch
+     @HasPermission([RIDER_PERMISSION])
+     public async bankDetails (req: Request) {
+
+        //@ts-ignore
+        const riderId = req.user._id
+
+        const { error, value } = Joi.object<IRiderModel>($bankDetailRider).validate(req.body);
+        if(error) return Promise.reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
+            
+        const rider = await datasources.riderDAOService.findById(riderId);
+        if(!rider)
+            return Promise.reject(CustomAPIError.response("Rider not found", HttpStatus.NOT_FOUND.code));
+        
+        const updateValue: Partial<any> = {
+            bankName: value.bankName,
+            accountName: value.accountName?.toUpperCase(),
+            accountNumber: value.accountNumber
+        }
+
+        await datasources.riderDAOService.update(
+            { _id: riderId },
+            updateValue
+        )
+
+        const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: 'Successfully updated'
+        };
+    
+        return Promise.resolve(response);
      };
 
       /**
@@ -410,7 +443,7 @@ export default class RiderController {
             const token = Generic.generatePasswordResetCode(6);
             await datasources.riderDAOService.update(
                 {_id: rider._id},
-                {passwordResetCode: token}
+                {passwordResetCode: +token}
             )
 
             sendMailService.sendMail({

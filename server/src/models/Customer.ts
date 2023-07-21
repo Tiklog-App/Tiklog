@@ -22,7 +22,8 @@ interface ICustomer {
   facebookId: string | null;
   roles: mongoose.Types.ObjectId[];
   level: number;
-  passwordResetCode: string;
+  passwordResetCode: number;
+  createdAt: Date;
 }
 
 const customerSchema = new Schema<ICustomer>({
@@ -44,7 +45,8 @@ const customerSchema = new Schema<ICustomer>({
   facebookId: { type: String, allowNull: true },
   roles: [{ type: Schema.Types.ObjectId, ref: 'Role' }],
   level: { type: Number, default: 0 },
-  passwordResetCode: { type: String, allowNull: true }
+  passwordResetCode: { type: Number, allowNull: true },
+  createdAt: { type: Date, default: Date.now }
 });
 
 // customerSchema.pre('remove', async function (next) {

@@ -100,8 +100,22 @@ export default class Generic {
     const timeInHours = distance / speed;
     const hours = Math.floor(timeInHours);
     const minutes = Math.round((timeInHours - hours) * 60);
+    console.log(typeof hours, typeof minutes, 'checkws')
+    const dateTime = new Date();
+    dateTime.setHours(dateTime.getHours() + hours);
+    dateTime.setMinutes(dateTime.getMinutes() + minutes);
+ 
+    // Format the date-time string
+    // const formattedDateTime = dateTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const formattedDateTime = dateTime.toLocaleString(undefined, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
 
-    return { distance, hours, minutes };
+    return { distance, hours, minutes, time: formattedDateTime };
   }
 
   private static toRadians(degrees: number) {
@@ -171,8 +185,32 @@ export default class Generic {
     return randomString;
   }
 
-  public static generatePasswordResetCode(limit: number) {
+  public static generatePaymentRefNumber(limit: number) {
     const letters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZ';
+    const letterCount = letters.length;
+    const randomBytes = crypto.randomBytes(limit);
+    let randomString = 'REF_';
+    for (let i = 0; i < limit; i++) {
+      const randomNum = randomBytes[i] % letterCount;
+      randomString += letters[randomNum];
+    }
+    return randomString;
+  }
+
+  public static generateDeliveryRefNumber(limit: number) {
+    const letters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZ';
+    const letterCount = letters.length;
+    const randomBytes = crypto.randomBytes(limit);
+    let randomString = 'REF_';
+    for (let i = 0; i < limit; i++) {
+      const randomNum = randomBytes[i] % letterCount;
+      randomString += letters[randomNum];
+    }
+    return randomString;
+  }
+
+  public static generatePasswordResetCode(limit: number) {
+    const letters = '0123456789';
     const letterCount = letters.length;
     const randomBytes = crypto.randomBytes(limit);
     let randomString = '';

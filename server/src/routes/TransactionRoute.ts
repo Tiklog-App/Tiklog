@@ -45,3 +45,27 @@ export const getCustomerWalletHandler = authenticateRouteWrapper(async (req, res
 
     res.status(response.code).json(response);
 });
+
+export const getRiderWalletHandler = authenticateRouteWrapper(async (req, res) => {
+    const response = await transactionController.riderWallet(req);
+
+    res.status(response.code).json(response);
+});
+
+export const requestPaymentHandler = authenticateRouteWrapper(async (req, res) => {
+    const response = await transactionController.requestPayment(req);
+
+    res.status(response.code).json(response);
+});
+
+export const makePaymentHandler = authenticateRouteWrapper(async (req, res) => {
+    const response = await transactionController.makePayment(req);
+
+    res.status(response.code).json(response);
+});
+
+export const fetchPaymentRequestHandler = authenticateRouteWrapper(async (req, res) => {
+    const response = await transactionController.fetchPaymentRequest(req);
+
+    res.status(response.code).json(response);
+});

@@ -3,8 +3,8 @@ import Joi from 'joi';
 
 interface ICustomerAddress {
     address_type: string;
-    address_one: string;
-    address_two: string | null;
+    address: string;
+    street: string | null;
     country: string;
     state: string;
     city: string;
@@ -14,8 +14,8 @@ interface ICustomerAddress {
 
 const customerAddressSchema = new Schema<ICustomerAddress>({
     address_type: { type: String },
-    address_one: { type: String },
-    address_two: { type: String, allowNull: true },
+    address: { type: String },
+    street: { type: String, allowNull: true },
     country: { type: String },
     state: { type: String },
     city: { type: String },
@@ -29,8 +29,8 @@ const CustomerAddress = mongoose.model<ICustomerAddressModel>('CustomerAddress',
 
 export const $saveCustomerAddress: Joi.SchemaMap = {
     address_type: Joi.string().required().label('address type'),
-    address_one: Joi.string().required().label('address 1'),
-    address_two: Joi.string().label('address 2'),
+    address: Joi.string().required().label('address'),
+    street: Joi.string().required().label('street'),
     country: Joi.string().required().label('country'),
     state: Joi.string().required().label('state'),
     city: Joi.string().required().label('city'),
@@ -38,8 +38,8 @@ export const $saveCustomerAddress: Joi.SchemaMap = {
 
 export const $updateCustomerAddress: Joi.SchemaMap = {
     address_type: Joi.string().label('address type'),
-    address_one: Joi.string().label('address 1'),
-    address_two: Joi.string().label('address 2'),
+    address: Joi.string().label('address'),
+    street: Joi.string().label('street'),
     country: Joi.string().label('country'),
     state: Joi.string().label('state'),
     city: Joi.string().label('city'),

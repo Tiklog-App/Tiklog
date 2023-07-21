@@ -8,10 +8,16 @@ import CustomAPIError from "../exceptions/CustomAPIError";
 import { HasPermission, TryCatch } from "../decorators";
 import { ITransactionModel } from "../models/Transaction";
 import axiosClient from '../services/api/axiosClient';
-import { INIT_TRANSACTION, PAYMENT_CHANNELS, VERIFY_TRANSACTION } from "../config/constants";
+import { INIT_TRANSACTION, PAYMENT_CHANNELS, PAYMENT_DONE, PAYMENT_IN_PROGRESS, SEVEN_DAYS_IN_MS } from "../config/constants";
 import { IWalletModel } from "../models/Wallet";
 import { appEventEmitter } from "../services/AppEventEmitter";
-import { CUSTOMER_PERMISSION, MANAGE_ALL, MANAGE_SOME, READ_TRANSACTION } from "../config/settings";
+import { CUSTOMER_PERMISSION, MAKE_PAYMENT, MANAGE_ALL, MANAGE_SOME, READ_ADMIN_FEES, READ_PAYMENT_REQUEST, READ_TRANSACTION, RIDER_PERMISSION } from "../config/settings";
+import PaystackService from "../services/PaystackService";
+import Generic from "../utils/Generic";
+import RedisService from "../services/RedisService";
+
+const redisService = new RedisService();
+const paystackService = new PaystackService();
 
 interface IAddToWallet {
     customer: string,
@@ -200,7 +206,6 @@ export default class TransactionController {
             type: transaction.type,
         };
 
-        // appEventEmitter.emit(VERIFY_TRANSACTION, { customer, transaction: $transaction });
         await datasources.transactionDAOService.update(
             {_id: transaction._id},
             $transaction
@@ -303,6 +308,26 @@ export default class TransactionController {
     }
 
     @TryCatch
+    @HasPermission([RIDER_PERMISSION])
+    public async riderWallet(req: Request) {
+        
+        //@ts-ignore
+        const riderId = req.user._id
+
+        const wallet = await datasources.riderWalletDAOService.findByAny({ rider: riderId });
+        if(!wallet)
+            return Promise.reject(CustomAPIError.response('Wallet not found', HttpStatus.NOT_FOUND.code));
+ 
+        const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: HttpStatus.OK.value,
+            result: wallet
+        };
+
+        return Promise.resolve(response);
+    };
+
+    @TryCatch
     @HasPermission([CUSTOMER_PERMISSION])
     public async getCustomerWallet(req: Request) {
 
@@ -321,4 +346,208 @@ export default class TransactionController {
 
         return Promise.resolve(response);
     }
+
+    @TryCatch
+    @HasPermission([MANAGE_ALL, READ_ADMIN_FEES])
+    public async fetchAdminFees(req: Request) {
+
+        const fees = await datasources.adminFeeDAOService.findAll({});
+
+        let total: number = 0;
+        for(let fee of fees){
+            total += fee.adminFee
+        }
+
+        const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: HttpStatus.OK.value,
+            result: { fees, total }
+        };
+
+        return Promise.resolve(response);
+    }
+
+    @TryCatch
+    @HasPermission([MANAGE_ALL, READ_PAYMENT_REQUEST])
+    public async fetchPaymentRequest(req: Request) {
+
+        let activeFilter = false;
+        let _filter = '';
+
+        if (req.query.search === PAYMENT_IN_PROGRESS) {
+            activeFilter = true;
+            _filter = 't'
+        } else if (req.query.search === PAYMENT_DONE) {
+            activeFilter = false;
+            _filter = 't'
+        }
+
+        const filter = _filter === ''
+                        ? {} 
+                        : activeFilter ? { status: PAYMENT_IN_PROGRESS } : { status: PAYMENT_DONE };
+
+        const paymentReq = await datasources.paymentRequestDAOService.findAll(filter);
+
+        const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: HttpStatus.OK.value,
+            results: paymentReq
+        };
+
+        return Promise.resolve(response);
+    }
+
+    @TryCatch
+    @HasPermission([RIDER_PERMISSION])
+    public async requestPayment(req: Request) {
+
+        const value = req.body;
+        //@ts-ignore
+        const riderId = req.user._id;
+        const rider = await datasources.riderDAOService.findById(riderId);
+        if(!rider)
+        return Promise.reject(CustomAPIError.response("Rider not found", HttpStatus.NOT_FOUND.code));
+
+        const riderWallet = await datasources.riderWalletDAOService.findByAny(
+            { rider: riderId }
+        )
+        if(!riderWallet)
+            return Promise.reject(CustomAPIError.response("Wallet not found", HttpStatus.NOT_FOUND.code));
+
+        if(value.amountRequested > riderWallet.balance)
+            return Promise.reject(CustomAPIError.response("Amount requested is greater than wallet balance", HttpStatus.NOT_FOUND.code));
+
+        const paymentReq = await datasources.paymentRequestDAOService.findByAny(
+            { rider: riderId }
+        );
+
+        if(paymentReq && paymentReq?.status === PAYMENT_IN_PROGRESS)
+            return Promise.reject(CustomAPIError.response("You have a pending payment request.", HttpStatus.NOT_FOUND.code));
+        
+        //@ts-ignore
+        if (paymentReq && paymentReq.status === PAYMENT_DONE) {
+            const currentDate = new Date();
+            //@ts-ignore
+            const createdAtDate = new Date(paymentReq.createdAt);
+          
+            const timeDifference = currentDate.getTime() - createdAtDate.getTime();
+            if (timeDifference >= SEVEN_DAYS_IN_MS && createdAtDate.getDay() === 1) {
+                const values = {
+                    rider: riderId,
+                    amountRequested: value.amountRequested,
+                    status: PAYMENT_IN_PROGRESS,
+                    refNumber: Generic.generatePaymentRefNumber(6)
+                }
+        
+                const payment = await datasources.paymentRequestDAOService.create(values as any);
+        
+                await datasources.riderWalletDAOService.update(
+                    { rider: riderId },
+                    { balance: riderWallet.balance - payment.amountRequested }
+                )
+              
+            } else {
+                return Promise.reject(CustomAPIError.response("Your withdrawal duration is not complete", HttpStatus.INTERNAL_SERVER_ERROR.code))
+            }
+        }
+
+        //@ts-ignore
+        if (!paymentReq && rider.createdAt) {
+            const currentDate = new Date();
+            //@ts-ignore
+            const createdAtDate = new Date(rider.createdAt);
+          
+            const timeDifference = currentDate.getTime() - createdAtDate.getTime();
+            if (timeDifference >= SEVEN_DAYS_IN_MS && currentDate.getDay() === 1) {
+                const values = {
+                    rider: riderId,
+                    amountRequested: value.amountRequested,
+                    status: PAYMENT_IN_PROGRESS,
+                    refNumber: Generic.generateRandomStringCrypto(6)
+                }
+        
+                const payment = await datasources.paymentRequestDAOService.create(values as any);
+        
+                await datasources.riderWalletDAOService.update(
+                    { rider: riderId },
+                    { balance: riderWallet.balance - payment.amountRequested }
+                )
+              
+            } else {
+                return Promise.reject(CustomAPIError.response("Your withdrawal duration is not complete", HttpStatus.INTERNAL_SERVER_ERROR.code))
+            }
+        }
+    
+        const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: "Payment request was successful"
+            // result: payment
+        };
+
+        return Promise.resolve(response);
+    }
+
+    @TryCatch
+    @HasPermission([MANAGE_ALL, MAKE_PAYMENT])
+    public async makePayment(req: Request) {
+        const riderId = req.params.riderId;
+        const rider = await datasources.riderDAOService.findById(riderId);
+        const paymentReq = await datasources.paymentRequestDAOService.findByAny({
+            rider: riderId,
+            status: PAYMENT_IN_PROGRESS,
+        });
+
+        if (!paymentReq) {
+            return Promise.reject(
+            CustomAPIError.response("Payment request not found", HttpStatus.NOT_FOUND.code)
+            );
+        }
+
+        try {
+            if (rider) {
+                const accNum = rider.accountNumber;
+                const bank = await datasources.bankDAOService.findByAny({ name: rider?.bankName });
+                const bankCode = bank && bank?.code;
+
+                const verificationData = await paystackService.verifyBankAccount(accNum, bankCode);
+
+                if (verificationData.data.account_name !== rider.accountName) {
+                    return Promise.reject(
+                    CustomAPIError.response(
+                        "Name on account doesn't match the account name you provided in your profile bank account section.",
+                        HttpStatus.BAD_REQUEST.code
+                    )
+                    );
+                }
+
+                const amountInKobo = paymentReq.amountRequested * 100;
+                await paystackService.sendMoneyToAccount(accNum, bankCode, amountInKobo, "Payment");
+
+                const paid = await datasources.paymentRequestDAOService.updateByAny(
+                    { _id: paymentReq._id },
+                    { status: PAYMENT_DONE }
+                );
+
+                //Send notification to rider phone as text
+                if(paid) {
+                    await redisService.sendNotification(
+                        rider.phone,
+                        `You have been credited NGN${Generic.formatNumberToIntl(+paid?.amountRequested)}.`
+                    )
+                }
+                
+            }
+
+            const response: HttpResponse<any> = {
+                code: HttpStatus.OK.code,
+                message: HttpStatus.OK.value,
+                result: "Payment sent to rider",
+            };
+
+            return Promise.resolve(response);
+        } catch (error: any) {
+            return Promise.reject(CustomAPIError.response(error.message, HttpStatus.INTERNAL_SERVER_ERROR.code));
+        }
+    }
+
 }

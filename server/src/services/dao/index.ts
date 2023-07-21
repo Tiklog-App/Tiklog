@@ -15,6 +15,10 @@ import VehicleTypeRepository from "../../repositories/VehicleTypeRepository";
 import VehicleNameRepository from "../../repositories/VehicleNameRepository";
 import NotificationRepository from "../../repositories/NotificationRepository";
 import RiderLicenseRepository from "../../repositories/RiderLicenseRepository";
+import RiderWalletRepository from "../../repositories/RiderWalletRepository";
+import BankRepository from "../../repositories/BankRepository";
+import AdminFeeRepository from "../../repositories/AdminFeeRepository";
+import PaymentRequestRepository from "../../repositories/PaymentRequestRepository";
 
 import PermissionDAOService from "./PermissionDAOService";
 import RoleDAOService from "./RoleDAOService";
@@ -33,6 +37,10 @@ import VehicleNameDAOService from "./VehicleNameDAOService";
 import VehicleTypeDAOService from "./VehicleTypeDAOService";
 import NotificationDAOService from "./NotificationDAOService";
 import RiderLicenseDAOService from "./RiderLicenseDAOService";
+import RiderWalletDAOService from "./RiderWalletDAOService";
+import BankDAOService from "./BankDAOService";
+import AdminFeeDAOService from "./AdminFeeDAOService";
+import PaymentRequestDAOService from "./PaymentRequestDAOService";
 
 const permissionRepository = new PermissionRepository();
 const roleRepository = new RoleRepository();
@@ -51,6 +59,10 @@ const vehicleTypeRepository = new VehicleTypeRepository();
 const vehicleNameRepository = new VehicleNameRepository();
 const notificationRepository = new NotificationRepository();
 const riderLicenseRepository = new RiderLicenseRepository();
+const riderWalletRepository = new RiderWalletRepository();
+const bankRepository = new BankRepository();
+const adminFeeRepository = new AdminFeeRepository();
+const paymentRequestRepository = new PaymentRequestRepository();
 
 const permissionDAOService = new PermissionDAOService(permissionRepository);
 const roleDAOService = new RoleDAOService(roleRepository);
@@ -69,6 +81,10 @@ const vehicleNameDAOService = new VehicleNameDAOService(vehicleNameRepository);
 const vehicleTypeDAOService = new VehicleTypeDAOService(vehicleTypeRepository);
 const notificationDAOService = new NotificationDAOService(notificationRepository);
 const riderLicenseDAOService = new RiderLicenseDAOService(riderLicenseRepository);
+const riderWalletDAOService = new RiderWalletDAOService(riderWalletRepository);
+const bankDAOService = new BankDAOService(bankRepository);
+const adminFeeDAOService = new AdminFeeDAOService(adminFeeRepository);
+const paymentRequestDAOService = new PaymentRequestDAOService(paymentRequestRepository);
 
 export default {
     vehicleDAOService,
@@ -87,5 +103,9 @@ export default {
     deliveryDAOService,
     riderAddressDAOService,
     notificationDAOService,
-    riderLicenseDAOService
+    riderLicenseDAOService,
+    riderWalletDAOService,
+    bankDAOService,
+    adminFeeDAOService,
+    paymentRequestDAOService
 }

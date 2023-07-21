@@ -1,6 +1,7 @@
 import { appCommonTypes } from '../../@types/app-common';
 import RouteEndpoints = appCommonTypes.RouteEndpoints;
 import {
+    cancelDeliveryHandler,
     createDeliveryHandler,
     deleteDeliveryHandler,
     driverResHandler,
@@ -48,6 +49,12 @@ const deliveryEndpoints: RouteEndpoints = [
         method: 'delete',
         path: '/delivery/:deliveryId',
         handler: deleteDeliveryHandler
+    },
+    {
+        name: 'cancel delivery',
+        method: 'put',
+        path: '/cancel-delivery/:deliveryId',
+        handler: cancelDeliveryHandler
     },
     {
         name: 'package request',

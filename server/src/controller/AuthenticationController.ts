@@ -52,11 +52,10 @@ export default class AuthenticationController {
 
         if(!user.active)
         return Promise.reject(
-            CustomAPIError.response('Account is disabled. Please contact administrator', HttpStatus.UNAUTHORIZED.code)
+          CustomAPIError.response('Account is disabled. Please contact administrator', HttpStatus.UNAUTHORIZED.code)
         );
 
         const role = await datasources.roleDAOService.findByIdPopulatePermissions(user.roles);
-
         if(!role) return Promise.reject(CustomAPIError.response('Role is not found', HttpStatus.UNAUTHORIZED.code));
 
         const permissions: any = [];
@@ -77,7 +76,7 @@ export default class AuthenticationController {
           loginToken: jwt
         };
 
-        await datasources.userDAOService.updateByAny({user}, updateValues);
+        await datasources.userDAOService.updateByAny({_id: user.id}, updateValues);
 
         const response: HttpResponse<string> = {
           code: HttpStatus.OK.code,
@@ -186,6 +185,7 @@ export default class AuthenticationController {
         //generate JWT
         const jwt = Generic.generateJwt({
           userId: customer.id,
+          level: customer.level,
           permissions
         });
 
@@ -213,7 +213,7 @@ export default class AuthenticationController {
     }
 
     @TryCatch
-    public async sign_in_customer(req: Request, socket: Socket<any, any, any, any>) {
+    public async sign_in_customer(req: Request) {
       await rabbitMqService.connectToRabbitMQ()
 
       const { error, value } = Joi.object<ICustomerModel>($loginSchemaCustomer).validate(req.body);
@@ -253,6 +253,7 @@ export default class AuthenticationController {
       //generate JWT
       const jwt = Generic.generateJwt({
         userId: user._id,
+        level: user.level,
         permissions
       });
 
@@ -361,7 +362,6 @@ export default class AuthenticationController {
         await role.save();
 
         const _role = await datasources.roleDAOService.findByIdPopulatePermissions(rider.roles);
-
         if(!_role) return Promise.reject(CustomAPIError.response('Role is not found', HttpStatus.UNAUTHORIZED.code));
 
         const permissions: any = [];
@@ -373,6 +373,7 @@ export default class AuthenticationController {
         //generate JWT
         const jwt = Generic.generateJwt({
           userId: rider.id,
+          level: rider.level,
           permissions
         });
 
@@ -436,6 +437,7 @@ export default class AuthenticationController {
       //generate JWT
       const jwt = Generic.generateJwt({
         userId: rider._id,
+        level: rider.level,
         permissions
       });
 
@@ -461,7 +463,6 @@ export default class AuthenticationController {
         //@ts-ignore
         const { loginToken, _id } = req.user;
         const decoded = decode(loginToken);
-        console.log(decoded, 'decode')
         //@ts-ignore
         const firstPermission = decoded.permissions.find(() => true);
 

@@ -23,6 +23,7 @@ import {
     saveRiderPasswordHandler,
     toggleOnlineOfflineHandler,
     updateRiderAddressHandler,
+    updateRiderBankDetailHandler,
     updateRiderHandler,
     updateRiderLicenseHandler,
     updateRiderLocationHandler,
@@ -185,6 +186,12 @@ const riderEndpoints: RouteEndpoints = [
         method: 'get',
         path: '/fetch-rider-licenses',
         handler: fetchRiderLicensesHandler
+    },
+    {
+        name: 'update rider bank details',
+        method: 'put',
+        path: '/update-rider-bank-details',
+        handler: updateRiderBankDetailHandler
     }
 ];
 

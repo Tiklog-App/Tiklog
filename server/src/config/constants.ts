@@ -52,17 +52,21 @@ import QueueEvents = appCommonTypes.QueueEvents;
   export const PRICE_PER_KM_BUS = 250;
   export const AVERAGE_PRICE_PER_KM = 250;
 
-  export const BIKE_SPEED = 60;
-  export const CAR_SPEED = 50;
-  export const BUS_SPEED = 40;
-  export const AVERAGE_SPEED = 40;
+  export const BIKE_SPEED = 30;
+  export const CAR_SPEED = 20;
+  export const BUS_SPEED = 10;
+  export const AVERAGE_SPEED = 10;
 
   export const MAX_DISTANCE = 1000 //in km
+
+  export const ADMIN_CHARGES = 10 //10 percent
 
   export const EXPIRATION_AMQP_MESSAGE = 5000;
   export const PACKAGE_REQUEST = 'package_requests';
   export const DRIVER_RESPONSES = 'driver_responses';
   export const PACKAGE_REQUEST_INFO = 'package_request_info';
+  export const PAYMENT_IN_PROGRESS = 'in-progress';
+  export const PAYMENT_DONE = 'done';
 
   export const CREATE_USER_ = 'event:CREATE_USER';
   export const UPDATE_USER_ = 'event:UPDATE_USER_';
@@ -89,3 +93,4 @@ import QueueEvents = appCommonTypes.QueueEvents;
 
   export const MAX_SIZE_IN_BYTE = 1000 * 1024; // 1MB
   export const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/jpg'];
+  export const SEVEN_DAYS_IN_MS = 7 * 24 * 60 * 60 * 1000

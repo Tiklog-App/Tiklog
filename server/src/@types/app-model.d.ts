@@ -67,7 +67,7 @@ export declare namespace appModelTypes {
      * @param options
      * 
      */
-    findOne(filter: FilterQuery<M>, options: QueryOptions): Promise<M | null>;
+    findOne(filter: FilterQuery<M>, options?: QueryOptions): Promise<M | null>;
 
     /**
      * @name updateById

@@ -10,9 +10,7 @@ import HttpResponse = appCommonTypes.HttpResponse;
 import { $saveRoleSchema, $updateRoleSchema, IRoleModel } from '../models/Role';
 import Joi from 'joi';
 import Generic from '../utils/Generic';
-import { appEventEmitter } from '../services/AppEventEmitter';
-import { CREATE_ROLE } from '../config/constants';
-import settings, { MANAGE_ALL } from '../config/settings';
+import settings, { FETCH_PERMISSIONS, MANAGE_ALL } from '../config/settings';
 
 export default class RoleController {
   @TryCatch
@@ -20,8 +18,6 @@ export default class RoleController {
   public async createRole(req: Request) {
 
     const role = await this.createRoleAndPermission(req);
-
-    appEventEmitter.emit(CREATE_ROLE, {role});
   
     const response: HttpResponse<IRoleModel> = {
       code: HttpStatus.OK.code,
@@ -57,7 +53,10 @@ export default class RoleController {
   @HasPermission([MANAGE_ALL])
   public async getAllRoles(req: Request) {
     
-    const roles = await datasources.roleDAOService.findAll({});
+    const options = {
+      slug: {$ne: settings.roles[0]}
+    }
+    const roles = await datasources.roleDAOService.findAll(options);
 
     const response: HttpResponse<any> = {
       code: HttpStatus.OK.code,
@@ -88,34 +87,18 @@ export default class RoleController {
   };
 
   @TryCatch
-  @HasPermission([MANAGE_ALL])
-  public async createManyPermissions(req: Request) {
+  @HasPermission([MANAGE_ALL, FETCH_PERMISSIONS])
+  public async fetchPermissions(req: Request) {
     
-    const permissions = settings.permissions;
-
-    for(let i=0; i<permissions.length; i++){
-      
-      const values = {
-        name: permissions[i],
-        action: permissions[i].split("_")[0],
-        subject: permissions[i].split("_")[1],
-        inverted: true
-      }
-
-      const existingPermission = await datasources.permissionDAOService.findByAny({
-        name: permissions[i]
-      });
-      if (existingPermission) {
-        continue;
-      }
-      
-      //@ts-ignore
-      await datasources.permissionDAOService.insertMany(values)
-    }
+    const options = {
+      name: {$ne: MANAGE_ALL}
+    };
+    const permissions = await datasources.permissionDAOService.findAll(options)
 
     const response: HttpResponse<any> = {
       code: HttpStatus.OK.code,
-      message: "Successfully saved permission."
+      message: "Successfully saved permission.",
+      results: permissions
     };
   
     return Promise.resolve(response);

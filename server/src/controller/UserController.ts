@@ -27,8 +27,6 @@ export default class UserController {
   public async createUser (req: Request) {
     const user = await this.doCreateUser(req);
 
-    appEventEmitter.emit(CREATE_USER_, {user});
-
     const response: HttpResponse<IUserModel> = {
         code: HttpStatus.OK.code,
         message: HttpStatus.OK.value,
@@ -49,8 +47,6 @@ export default class UserController {
   @HasPermission([MANAGE_ALL, UPDATE_USER])
   public async updateUser (req: Request) {
       const customer = await this.doUpdateUser(req);
-  
-      appEventEmitter.emit(UPDATE_USER_, customer)
 
       const response: HttpResponse<any> = {
           code: HttpStatus.OK.code,
@@ -195,6 +191,7 @@ export default class UserController {
       slug: Generic.generateSlug(value.role)
     });
     if(!role) return Promise.reject(CustomAPIError.response('Role not found', HttpStatus.BAD_REQUEST.code));
+    if((role.slug === settings.roles[0])) return Promise.reject(CustomAPIError.response('Super admin user already exist', HttpStatus.BAD_REQUEST.code));
 
     const email = await datasources.userDAOService.findByAny({email: value.email});
     if(email) return Promise.reject(CustomAPIError.response('Email already in use', HttpStatus.BAD_REQUEST.code));
@@ -310,11 +307,11 @@ export default class UserController {
 
   };
 
-private async doDeleteUser(req: Request) {
-  const userId = req.params.userId;
+  private async doDeleteUser(req: Request) {
+    const userId = req.params.userId;
 
-  return await datasources.userDAOService.deleteById(userId);
+    return await datasources.userDAOService.deleteById(userId);
 
-};
+  };
   
 }

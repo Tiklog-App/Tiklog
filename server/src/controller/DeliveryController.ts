@@ -54,8 +54,6 @@ export default class DeliveryController {
     public async delivery (req: Request) {
         const delivery = await this.doDelivery(req);
 
-        appEventEmitter.emit(CREATE_DELIVERY, delivery);
-
         const response: HttpResponse<any> = {
             code: HttpStatus.OK.code,
             message: 'Delivery was successful',
@@ -79,8 +77,6 @@ export default class DeliveryController {
     @HasPermission([CUSTOMER_PERMISSION])
     public async editDelivery (req: Request) {
         const delivery = await this.doEditDelivery(req);
-
-        appEventEmitter.emit(EDIT_DELIVERY, delivery);
 
         const response: HttpResponse<any> = {
             code: HttpStatus.OK.code,
@@ -171,11 +167,63 @@ export default class DeliveryController {
 
         const deliveryId = req.params.deliveryId
 
+        const delivery = await datasources.deliveryDAOService.findById(deliveryId);
+        if(!delivery)
+            return Promise.reject(CustomAPIError.response('Delivery not found', HttpStatus.NOT_FOUND.code));
+
+        if(delivery.status === PENDING)
+            return Promise.reject(CustomAPIError.response('Delivery is pending, can not delete delivery at this time', HttpStatus.BAD_REQUEST.code));
+
+        if(delivery.status === ON_TRANSIT)
+            return Promise.reject(CustomAPIError.response('Delivery is on transit, can not delete delivery at this time', HttpStatus.BAD_REQUEST.code));
+
+
         await datasources.deliveryDAOService.deleteById(deliveryId);
 
         const response: HttpResponse<any> = {
             code: HttpStatus.OK.code,
             message: 'Delivery deleted successfully'
+        };
+      
+        return Promise.resolve(response);
+    };
+
+    @TryCatch
+    @HasPermission([MANAGE_ALL, CUSTOMER_PERMISSION])
+    public async cancelDelivery(req: Request) {
+
+        const deliveryId = req.params.deliveryId
+
+        const delivery = await datasources.deliveryDAOService.findById(deliveryId);
+        if(!delivery)
+            return Promise.reject(CustomAPIError.response('Delivery not found', HttpStatus.NOT_FOUND.code));
+
+        if(delivery.status === ON_TRANSIT)
+            return Promise.reject(CustomAPIError.response('Package already in transit, can not cancel delivery at this time', HttpStatus.BAD_REQUEST.code));
+
+        if(delivery.status === DELIVERED)
+            return Promise.reject(CustomAPIError.response('Package has already been delivered, can not cancel delivery at this time', HttpStatus.BAD_REQUEST.code));
+
+        if(delivery.status === CANCELED)
+            return Promise.reject(CustomAPIError.response('Can not cancel delivery at this time, already canceled', HttpStatus.BAD_REQUEST.code));
+
+        const wallet = await datasources.walletDAOService.findByAny({customer: delivery.customer});
+        if(!wallet)
+            return Promise.reject(CustomAPIError.response('Wallet not found', HttpStatus.NOT_FOUND.code));
+
+        await datasources.deliveryDAOService.updateByAny(
+            { _id: deliveryId },
+            { status: CANCELED }
+        );
+
+        await datasources.walletDAOService.updateByAny(
+            { customer: delivery.customer },
+            { balance: wallet.balance + delivery.deliveryFee }
+        )
+
+        const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: 'Delivery canceled successfully'
         };
       
         return Promise.resolve(response);
@@ -201,6 +249,9 @@ export default class DeliveryController {
             return Promise.reject(CustomAPIError.response('Delivery does not exist', HttpStatus.NOT_FOUND.code));
         
         const lastDelivery = delivery[delivery.length - 1];
+
+        if(lastDelivery.status === CANCELED || lastDelivery.status === DELIVERED)
+            return Promise.reject(CustomAPIError.response('No pending delivery, please fill out a new delivery', HttpStatus.NOT_FOUND.code));
 
         const customerLongitude = lastDelivery.senderLocation.coordinates[0];
         const customerLatitude = lastDelivery.senderLocation.coordinates[1];
@@ -231,8 +282,9 @@ export default class DeliveryController {
         let rider: any = null;
         for(const riderLoc of riders) {
             const _rider = await datasources.riderDAOService.findById(riderLoc.rider);
+            const _rider_license = await datasources.riderLicenseDAOService.findByAny({rider: riderLoc.rider})
 
-            if ((_rider?.status === 'online' && _rider?.active) && rider === null) {
+            if (_rider?.status === 'online' && _rider?.active && !_rider_license?.isExpired) {
                 rider = _rider;
                 break;
             }
@@ -242,7 +294,7 @@ export default class DeliveryController {
 
         const vehicle = await datasources.vehicleDAOService.findByAny({
             rider: rider?._id
-        })
+        });
 
         let speedInKmPerHour = 0;
         if(vehicle){
@@ -302,7 +354,8 @@ export default class DeliveryController {
             senderName: lastDelivery.senderName,
             arrivalTime: `Rider will arrive in ${arrivalTime}min`,
             deliveryRefNumber: deliveryRefNumber,
-            estimatedDeliveryTime: estimatedDeliveryTime
+            estimatedDeliveryTime: estimatedDeliveryTime,
+            deliveryId: lastDelivery._id
         }
 
         const redisData = JSON.stringify(packageRequestData)
@@ -416,8 +469,6 @@ export default class DeliveryController {
         if(wallet.balance < _deliveryFee)
             return Promise.reject(CustomAPIError.response('Wallet is low on cash, please fund wallet.', HttpStatus.BAD_REQUEST.code));
 
-        const deliveryTime = `${distance.hours}hrs:${distance.minutes}min`;
-
         const deliveryValue: Partial<IDeliveryModel> = {
             ...value,
             senderLocation: {
@@ -429,10 +480,10 @@ export default class DeliveryController {
                 coordinates: [value.recipientLon, value.recipientLat],
             },
             status: PENDING,
-            deliveryFee: _deliveryFee.toFixed(2),
+            deliveryFee: Math.round(_deliveryFee + 0.5),
             customer: customerId,
-            estimatedDeliveryTime: deliveryTime,
-            deliverRefNumber: Generic.generateRandomStringCrypto(6)
+            estimatedDeliveryTime: `${distance.hours}:${distance.minutes}`,
+            deliveryRefNumber: Generic.generateSlug(Generic.generateDeliveryRefNumber(6))
         };
 
         const delivery  = await datasources.deliveryDAOService.create(deliveryValue as IDeliveryModel);
@@ -515,8 +566,6 @@ export default class DeliveryController {
         if(isNegative && Math.abs(deliveryDiff) > wallet.balance)
             return Promise.reject(CustomAPIError.response('Wallet is low on cash, please fund wallet', HttpStatus.BAD_REQUEST.code));
 
-        const deliveryTime = `${distance.hours}hrs:${distance.minutes}min`;
-
         const deliveryValue: Partial<IDeliveryModel> = {
             ...value,
             senderLocation: {
@@ -530,7 +579,7 @@ export default class DeliveryController {
             status: PENDING,
             deliveryFee: _deliveryFee.toFixed(2),
             customer: _delivery.customer,
-            estimatedDeliveryTime: deliveryTime
+            estimatedDeliveryTime: distance.time
         };
 
         const delivery  = await datasources.deliveryDAOService.updateByAny(

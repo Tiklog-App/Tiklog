@@ -1,4 +1,5 @@
 import authEndpoints from "./auth.endpoints";
+import bankEndpoints from "./bank.endpoints";
 import customerEndpoints from "./customer.endpoints";
 import deliveryEndpoints from "./delivery.endpoints";
 import packageEndpoints from "./package.endpoints";
@@ -16,6 +17,7 @@ const endpoints = userEndpoints
     .concat(transactionEndpoints)
     .concat(deliveryEndpoints)
     .concat(riderEndpoints)
-    .concat(vehicleEndpoints);
+    .concat(vehicleEndpoints)
+    .concat(bankEndpoints);
 
 export default endpoints;

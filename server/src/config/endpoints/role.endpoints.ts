@@ -1,6 +1,13 @@
 import { appCommonTypes } from '../../@types/app-common';
 import RouteEndpoints = appCommonTypes.RouteEndpoints;
-import { createPermissionsHandler, createRoleHandler, deleteRoleHandler, getRoleHandler, getRolesHandler, updateRoleHandler } from '../../routes/roleRoute';
+import { 
+    createRoleHandler,
+    deleteRoleHandler,
+    fetchPermissionsHandler,
+    getRoleHandler,
+    getRolesHandler,
+    updateRoleHandler
+} from '../../routes/roleRoute';
 
 const roleEndpoints: RouteEndpoints = [
     {
@@ -34,10 +41,10 @@ const roleEndpoints: RouteEndpoints = [
         handler: getRoleHandler
     },
     {
-        name: 'create permissions',
-        method: 'post',
+        name: 'fetch permissions',
+        method: 'get',
         path: '/permissions',
-        handler: createPermissionsHandler
+        handler: fetchPermissionsHandler
     }
 ];
 

@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import Joi from 'joi';
+import Joi, { string } from 'joi';
 
 interface IUser {
   firstName: string;
@@ -16,7 +16,8 @@ interface IUser {
   loginToken: string | null;
   loginDate: Date | null;
   roles: mongoose.Types.ObjectId[];
-  role: string
+  role: string;
+  slug: string | null;
 }
 
 const userSchema = new Schema<IUser>({
@@ -31,7 +32,8 @@ const userSchema = new Schema<IUser>({
   active: { type: Boolean, allowNull: true },
   loginToken: { type: String, allowNull: true },
   loginDate: { type: Date, allowNull: true },
-  roles: [{ type: Schema.Types.ObjectId, ref: 'Role' }]
+  roles: [{ type: Schema.Types.ObjectId, ref: 'Role' }],
+  slug: { type: String, allowNull: true }
 });
 
 userSchema.pre('find', function (next) {

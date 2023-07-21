@@ -1,5 +1,4 @@
 import endpoints from '../config/endpoints';
-import settings from '../config/settings';
 import { Router } from 'express';
 import asyncErrorWrapper from '../middleware/asyncErrorWrapper';
 

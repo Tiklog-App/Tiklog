@@ -22,7 +22,12 @@ interface IRider {
   facebookId: string | null;
   status: string;
   level: number;
-  passwordResetCode: string;
+  passwordResetCode: number;
+  busy: boolean;
+  bankName: string | null;
+  accountName: string | null;
+  accountNumber: string | null;
+  createdAt: Date;
 }
 
 const riderSchema = new Schema<IRider>({
@@ -45,7 +50,12 @@ const riderSchema = new Schema<IRider>({
   roles: [{ type: Schema.Types.ObjectId, ref: 'Role' }],
   status: { type: String },
   level: { type: Number, default: 0 },
-  passwordResetCode: { type: String, allowNull: true }
+  passwordResetCode: { type: Number, allowNull: true },
+  busy: { type: Boolean, default: false },
+  bankName: { type: String, allowNull: true },
+  accountName: { type: String, allowNull: true },
+  accountNumber: { type: String, allowNull: true },
+  createdAt: { type: Date, default: Date.now }
 });
 
 riderSchema.pre('find', function (next) {
@@ -136,6 +146,12 @@ export const $savePassword: Joi.SchemaMap = {
 export const $finishSavingRider: Joi.SchemaMap = {
   token: Joi.string().required().label('token'),
   phone: Joi.string().required().label('phone')
+};
+
+export const $bankDetailRider: Joi.SchemaMap = {
+  bankName: Joi.string().required().label('bank name'),
+  accountName: Joi.string().required().label('account name'),
+  accountNumber: Joi.string().required().label('account number')
 };
 
 export const $loginSchemaRider: Joi.SchemaMap = {

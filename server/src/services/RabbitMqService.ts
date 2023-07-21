@@ -2,8 +2,11 @@ import amqp, { Connection, Channel } from 'amqplib';
 import { Server, Socket } from 'socket.io';
 import settings from '../config/settings';
 import {
+  ADMIN_CHARGES,
+  DELIVERED,
   DRIVER_RESPONSES,
   EXPIRATION_AMQP_MESSAGE,
+  ON_TRANSIT,
   PACKAGE_REQUEST,
   PACKAGE_REQUEST_INFO
 } from '../config/constants';
@@ -239,15 +242,75 @@ class RabbitMqService {
       const keys = PACKAGE_REQUEST_INFO
       const redisData = await redisService.getToken(keys);
 
-      const {estimatedDeliveryTime}: any = redisData;
+      const {estimatedDeliveryTime, deliveryId, riderId, deliveryRefNumber}: any = redisData;
 
       const deliveryData = {
         ...data,
+        deliveryRefNumber,
         estimatedDeliveryTime: estimatedDeliveryTime
       }
-      customerSocket.emit('startDeliveryNotification', deliveryData)
+      customerSocket.emit('startDeliveryNotification', deliveryData);
+      await datasources.deliveryDAOService.updateByAny(
+        {_id: deliveryId},
+        {status: ON_TRANSIT}
+      )
+      await datasources.riderDAOService.updateByAny(
+        { _id: riderId },
+        { busy: true }
+      )
     }
   }
+
+    //Sends a notification to customer notifying package delivered
+    async endDeliveryNotification(data: any): Promise<void> {
+      const customerSocket = this.socketMap.get(data.customerId);
+      if(customerSocket){
+        console.log('delivery ended')
+        const keys = PACKAGE_REQUEST_INFO
+        const redisData = await redisService.getToken(keys);
+  
+        const {estimatedDeliveryTime, deliveryId, riderId, deliveryRefNumber}: any = redisData;
+  
+        const deliveryData = {
+          ...data,
+          deliveryRefNumber,
+          estimatedDeliveryTime: estimatedDeliveryTime
+        }
+        customerSocket.emit('endDeliveryNotification', deliveryData);
+        const delivery = await datasources.deliveryDAOService.updateByAny(
+          {_id: deliveryId},
+          {status: DELIVERED}
+        )
+        await datasources.riderDAOService.updateByAny(
+          { _id: riderId },
+          { busy: false }
+        )
+        const riderWallet = await datasources.riderWalletDAOService.findByAny({ rider: riderId });
+        const adminFee = delivery && ADMIN_CHARGES/100 * delivery.deliveryFee;
+        const riderFee = delivery && delivery.deliveryFee - Math.round(adminFee as number) as number;
+        if(riderWallet) {
+          await datasources.riderWalletDAOService.update(
+            { _id: riderId },
+            { balance: riderFee && riderFee + riderWallet.balance }
+          )
+        } else {
+          const walletValues = {
+            rider: riderId,
+            balance: riderFee
+          }
+          await datasources.riderWalletDAOService.create(walletValues as any)
+        }
+
+        //saves the admin charges for the delivery
+        await datasources.adminFeeDAOService.create({
+          deliveryRefNumber: deliveryRefNumber,
+          rider: riderId,
+          adminFee: adminFee
+        } as any)
+
+        await redisService.deleteRedisKey(keys)
+      }
+    }
 
   findSocketIdByRiderId(riderId: any): any | undefined {
     return this.socketMap.get(riderId);
@@ -302,6 +365,12 @@ class RabbitMqService {
       socket.on('startDelivery', (data: any) => {
         if(data) {
           this.startDeliveryNotification(data)
+        }
+      })
+
+      socket.on('endDelivery', (data: any) => {
+        if(data) {
+          this.endDeliveryNotification(data)
         }
       })
 

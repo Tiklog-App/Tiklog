@@ -2,11 +2,15 @@ import { appCommonTypes } from '../../@types/app-common';
 import RouteEndpoints = appCommonTypes.RouteEndpoints;
 import {
     addToWalletHandler,
+    fetchPaymentRequestHandler,
     getCustomerTransactionsHandler,
     getCustomerWalletHandler,
+    getRiderWalletHandler,
     getTransactionByRefHandler,
     getTransactionsHandler,
     initTransactionCallbackHandler,
+    makePaymentHandler,
+    requestPaymentHandler,
     updateTransactionHandler
 } from '../../routes/TransactionRoute';
 
@@ -52,6 +56,30 @@ const transactionEndpoints: RouteEndpoints = [
         method: 'get',
         path: '/customer-wallet',
         handler: getCustomerWalletHandler
+    },
+    {
+        name: 'get rider wallet',
+        method: 'get',
+        path: '/rider-wallet',
+        handler: getRiderWalletHandler
+    },
+    {
+        name: 'payment request',
+        method: 'post',
+        path: '/request-payment',
+        handler: requestPaymentHandler
+    },
+    {
+        name: 'make payment',
+        method: 'post',
+        path: '/make-payment/:riderId',
+        handler: makePaymentHandler
+    },
+    {
+        name: 'fetch payment request',
+        method: 'get',
+        path: '/fetch-payment-requests',
+        handler: fetchPaymentRequestHandler
     }
 ];
 

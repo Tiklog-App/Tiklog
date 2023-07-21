@@ -1,0 +1,11 @@
+{
+    "firstName": "Tik",
+    "lastName": "Logistics",
+    "email": "tiklog.com@gmail.com",
+    "phone": "+2347085027790",
+    "password": "",
+    "confirm_password": "",
+    "gender": "male",
+    "slug": "SUPER_ADMIN_ROLE",
+    "active": true
+  }

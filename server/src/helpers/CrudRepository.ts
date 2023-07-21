@@ -18,27 +18,25 @@ export default class CrudRepository<M extends Document, Id extends Types.ObjectI
     return result[0];
   }
 
-  async findAll(filter?: FilterQuery<M>, options?: QueryOptions, search?: string): Promise<Array<M>> {
-    let query = filter ? this.model.find(filter, options) : this.model.find({}, options);
-    
-    //filtering/searching
-    if (search) {
-      const searchRegex = new RegExp(search, 'i');
-      query = query.find({ $or: [
-        { active: searchRegex },
-        { firstName: searchRegex },
-        { lastName: searchRegex },
-        { senderName: searchRegex },
-        { recipientName: searchRegex },
-        { status: searchRegex }
-      ] });
-    };
+  async findAll(filter?: FilterQuery<M>, options?: QueryOptions & { search?: any }): Promise<Array<M>> {
+    let query = filter ? this.model.find(filter) : this.model.find({}, options);
 
-    //check is sort
-    if (options && options.sort) {
+    if (options?.search && options?.searchFields) {
+      const searchRegex = new RegExp(options?.search, 'i');
+      const searchConditions = options.searchFields.map((field: any) => ({ [field]: searchRegex }));
+      query = query.find({ $or: searchConditions });
+    }
+
+    // Sorting
+    if (options?.sort) {
       query.sort(options.sort);
     } else {
       query.sort({ createdAt: -1 });
+    }
+
+    // Limiting
+    if (options?.limit) {
+      query.limit(options.limit);
     }
 
     return query.exec();

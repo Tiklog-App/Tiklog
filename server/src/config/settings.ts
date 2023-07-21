@@ -39,13 +39,23 @@ export const DELETE_VEHICLE_NAME = 'delete_vehicle_name';
 export const READ_VEHICLE_NAME = 'read_vehicle_name';
 export const UPDATE_VEHICLE_NAME = 'update_vehicle_name';
 
-export const FETCH_LICENSE = 'fetch_license'
+export const FETCH_LICENSE = 'fetch_license';
+
+export const READ_ADMIN_FEES = 'read_admin_fees';
+
+export const READ_PAYMENT_REQUEST = 'read_payment_request';
+
+export const FETCH_PERMISSIONS = 'fetch_permissions';
+export const MAKE_PAYMENT = 'make_payment';
 
 const settings: AppSettings = {
   twilio: {
     twilioSid: <string>process.env.TWILIO_ACCOUNT_SID,
     twilioAuthToken: <string>process.env.TWILIO_AUTH_TOKEN,
     phoneNumber: <string>process.env.TWILIO_PHONE_NUMBER
+  },
+  paystack: {
+    apiKey: <string>process.env.PAYMENT_GW_SECRET_KEY
   },
   nodemailer: {
     email: <string>process.env.NODEMAILER_EMAIL_ADDRESS,
@@ -86,7 +96,6 @@ const settings: AppSettings = {
   permissions: [
     MANAGE_ALL,
     MANAGE_SOME,
-
     CUSTOMER_PERMISSION,
     RIDER_PERMISSION,
 
@@ -104,14 +113,16 @@ const settings: AppSettings = {
     READ_RIDER,
     UPDATE_RIDER,
     DELETE_RIDER,
-    
+
     CREATE_PACKAGE,
     DELETE_PACKAGE,
 
     READ_TRANSACTION,
+
     DELETE_DELIVERY,
 
     READ_VEHICLE,
+
     CREATE_VEHICLE_TYPE,
     DELETE_VEHICLE_TYPE,
     READ_VEHICLE_TYPE,
@@ -121,7 +132,14 @@ const settings: AppSettings = {
     READ_VEHICLE_NAME,
     UPDATE_VEHICLE_NAME,
 
-    FETCH_LICENSE
+    FETCH_LICENSE,
+
+    READ_ADMIN_FEES,
+
+    READ_PAYMENT_REQUEST,
+
+    FETCH_PERMISSIONS,
+    MAKE_PAYMENT
   ],
   roles: [
     'SUPER_ADMIN_ROLE',
