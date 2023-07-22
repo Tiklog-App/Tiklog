@@ -9,8 +9,6 @@ import Joi from 'joi';
 
 import HttpResponse = appCommonTypes.HttpResponse;
 import BcryptPasswordEncoder = appCommonTypes.BcryptPasswordEncoder;
-import { appEventEmitter } from '../services/AppEventEmitter';
-import { CHANGE_USER_PASSWORD, CREATE_USER_, DELETE_USER_, UPDATE_USER_, UPDATE_USER_STATUS_ } from '../config/constants';
 import settings, { MANAGE_ALL, CREATE_USER, UPDATE_USER, DELETE_USER, READ_CUSTOMER, READ_USER, MANAGE_SOME } from '../config/settings';
 import Generic from '../utils/Generic';
 
@@ -69,8 +67,6 @@ export default class UserController {
   public  async changePassword (req: Request) {
     const user = await this.doChangePassword(req);
 
-    appEventEmitter.emit(CHANGE_USER_PASSWORD, user)
-
     const response: HttpResponse<IUserModel> = {
       code: HttpStatus.OK.code,
       message: HttpStatus.OK.value,
@@ -90,13 +86,11 @@ export default class UserController {
   @TryCatch
   @HasPermission([MANAGE_ALL, UPDATE_USER])
   public  async updateUserStatus (req: Request) {
-    const user = await this.doUpdateUserStatus(req);
-
-    appEventEmitter.emit(UPDATE_USER_STATUS_, user)
+    await this.doUpdateUserStatus(req);
 
     const response: HttpResponse<any> = {
-        code: HttpStatus.OK.code,
-        message: 'Successfully updated status'
+      code: HttpStatus.OK.code,
+      message: 'Successfully updated status'
     };
   
     return Promise.resolve(response);
@@ -112,9 +106,7 @@ export default class UserController {
   @TryCatch
   @HasPermission([MANAGE_ALL, DELETE_USER])
   public  async deleteUser (req: Request) {
-    const user = await this.doDeleteUser(req);
-
-    appEventEmitter.emit(DELETE_USER_, user)
+    await this.doDeleteUser(req);
 
     const response: HttpResponse<any> = {
         code: HttpStatus.OK.code,

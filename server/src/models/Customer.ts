@@ -22,7 +22,7 @@ interface ICustomer {
   facebookId: string | null;
   roles: mongoose.Types.ObjectId[];
   level: number;
-  passwordResetCode: number;
+  passwordResetCode: string | null;
   createdAt: Date;
 }
 
@@ -45,7 +45,7 @@ const customerSchema = new Schema<ICustomer>({
   facebookId: { type: String, allowNull: true },
   roles: [{ type: Schema.Types.ObjectId, ref: 'Role' }],
   level: { type: Number, default: 0 },
-  passwordResetCode: { type: Number, allowNull: true },
+  passwordResetCode: { type: String, allowNull: true },
   createdAt: { type: Date, default: Date.now }
 });
 

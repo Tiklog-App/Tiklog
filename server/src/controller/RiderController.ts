@@ -440,10 +440,10 @@ export default class RiderController {
             // const actualData = JSON.stringify(data);
 
             // redisService.saveToken(`tikLog_app_${value.email}`, actualData, 900);
-            const token = Generic.generatePasswordResetCode(6);
+            const token = Generic.generatePasswordResetCode(4);
             await datasources.riderDAOService.update(
                 {_id: rider._id},
-                {passwordResetCode: +token}
+                {passwordResetCode: token}
             )
 
             sendMailService.sendMail({

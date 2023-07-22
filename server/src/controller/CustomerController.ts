@@ -226,22 +226,21 @@ export default class CustomerController {
                 email: value.email
             });
             if(!customer) return Promise.reject(CustomAPIError.response('Customer not found', HttpStatus.BAD_REQUEST.code));
-
-            // const token = Generic.generateRandomStringCrypto(10);
-            // const data = {
-            //     token: token,
-            //     email: value.email,
-            //     customer_id: customer._id
-            // };
-            // const actualData = JSON.stringify(data);
-
-            // redisService.saveToken(`tikLog_app_${value.email}`, actualData, 900);
-
+            
             const token = Generic.generatePasswordResetCode(4);
+            
+            const data = {
+                token: token
+            };
+            const actualData = JSON.stringify(data);
+
+            redisService.saveToken(`tikLog_app_${value.email}`, actualData, 3600);
+
+            
 
             await datasources.customerDAOService.update(
                 {_id: customer._id},
-                {passwordResetCode: +token}
+                {passwordResetCode: token}
             )
 
             sendMailService.sendMail({
@@ -300,9 +299,9 @@ export default class CustomerController {
      * Saves the new password for the customer
      * else it returns an error
      */
-    @TryCatch
+    // @TryCatch
     public async savePassword (req: Request) {
-        // try {
+        try {
 
             const { error, value } = Joi.object<ICustomerModel>($savePasswordAfterReset).validate(req.body);
 
@@ -314,43 +313,43 @@ export default class CustomerController {
             if(!customer)
                 return Promise.reject(CustomAPIError.response('Customer not found', HttpStatus.BAD_REQUEST.code));
             
-            // const keys = `tikLog_app_${customer.email}`;
-            // const redisData = await redisService.getToken(keys);
+            const keys = `tikLog_app_${value.email}`;
+            const redisData = await redisService.getToken(keys);
 
-            // if (redisData) {
-            //     const { customer_id }: any = redisData;
+            if (redisData) {
+                const { token }: any = redisData;
                 
-            // if(customerId !== customer_id)
-            //     return Promise.reject(CustomAPIError.response('Failed to save password, please try later', HttpStatus.BAD_REQUEST.code));
+            if(token !== customer.passwordResetCode)
+                return Promise.reject(CustomAPIError.response('Failed to save password, please try resetting password again', HttpStatus.BAD_REQUEST.code));
             
-            const password = await this.passwordEncoder.encode(value.password as string);
-            const customerValues = {
-                password: password,
-                confirm_password: password
-            };
+                const password = await this.passwordEncoder.encode(value.password as string);
+                const customerValues = {
+                    password: password,
+                    confirm_password: password
+                };
+                
+                await datasources.customerDAOService.update(
+                    { _id: customer._id },
+                    customerValues
+                );
+
+                const response: HttpResponse<any> = {
+                    code: HttpStatus.OK.code,
+                    message: 'Password reset successfully.',
+                };
+
+                redisService.deleteRedisKey(keys)
+                return Promise.resolve(response);
+
+            } else {
+                // Token not found in Redis
+                return Promise.reject(CustomAPIError.response('Token has expired', HttpStatus.BAD_REQUEST.code))
+            }
             
-            await datasources.customerDAOService.update(
-                { _id: customer._id },
-                customerValues
-            );
-
-            const response: HttpResponse<any> = {
-                code: HttpStatus.OK.code,
-                message: 'Password reset successfully.',
-            };
-
-            // redisService.deleteRedisKey(keys)
-            return Promise.resolve(response);
-
-            // } else {
-            //     // Token not found in Redis
-            //     return Promise.reject(CustomAPIError.response('Token has expired', HttpStatus.BAD_REQUEST.code))
-            // }
-            
-        // } catch (error) {
-        //     console.error(error, 'token error when getting');
-        //     return Promise.reject(CustomAPIError.response('Failed to retrieve token please try again later', HttpStatus.BAD_REQUEST.code))
-        // }
+        } catch (error) {
+            console.error(error, 'token error when getting');
+            return Promise.reject(CustomAPIError.response('Failed to retrieve token please try again later', HttpStatus.BAD_REQUEST.code))
+        }
     }
 
     /***

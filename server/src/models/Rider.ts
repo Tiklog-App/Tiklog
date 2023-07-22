@@ -22,7 +22,7 @@ interface IRider {
   facebookId: string | null;
   status: string;
   level: number;
-  passwordResetCode: number;
+  passwordResetCode: string | null;
   busy: boolean;
   bankName: string | null;
   accountName: string | null;
@@ -50,7 +50,7 @@ const riderSchema = new Schema<IRider>({
   roles: [{ type: Schema.Types.ObjectId, ref: 'Role' }],
   status: { type: String },
   level: { type: Number, default: 0 },
-  passwordResetCode: { type: Number, allowNull: true },
+  passwordResetCode: { type: String, allowNull: true },
   busy: { type: Boolean, default: false },
   bankName: { type: String, allowNull: true },
   accountName: { type: String, allowNull: true },
