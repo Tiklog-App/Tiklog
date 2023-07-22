@@ -1,4 +1,3 @@
-import { Request, Response } from "express";
 import UserController from "../controller/UserController";
 import PasswordEncoder from "../utils/PasswordEncoder";
 import authenticateRouteWrapper from "../middleware/authenticateRouteWrapper";
@@ -6,10 +5,10 @@ import authenticateRouteWrapper from "../middleware/authenticateRouteWrapper";
 const passwordEncoder = new PasswordEncoder();
 const userController = new UserController(passwordEncoder);
 
-export const createUser = async (req: Request, res: Response) => {
+export const createUser = authenticateRouteWrapper(async (req, res) => {
     const response = await userController.createUser(req);
     res.status(response.code).json(response);
-}
+});
 
 export const updateUserHandler = authenticateRouteWrapper( async (req, res) =>  {
     const response = await userController.updateUser(req);

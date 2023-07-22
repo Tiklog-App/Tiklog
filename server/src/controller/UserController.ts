@@ -21,7 +21,7 @@ export default class UserController {
 
 
   @TryCatch
-  // @HasPermission([MANAGE_ALL, CREATE_USER])
+  @HasPermission([MANAGE_ALL, CREATE_USER])
   public async createUser (req: Request) {
     const user = await this.doCreateUser(req);
 
