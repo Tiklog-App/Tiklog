@@ -1,6 +1,7 @@
 import UserController from "../controller/UserController";
 import PasswordEncoder from "../utils/PasswordEncoder";
 import authenticateRouteWrapper from "../middleware/authenticateRouteWrapper";
+import { Request, Response } from "express";
 
 const passwordEncoder = new PasswordEncoder();
 const userController = new UserController(passwordEncoder);
@@ -45,3 +46,22 @@ export const changeUserPasswordHandler = authenticateRouteWrapper( async (req, r
 
     res.status(response.code).json(response);
 });
+
+export const resetUserPasswordHandler = async (req: Request, res: Response) =>  {
+    const response = await userController.resetPassword(req);
+
+    //@ts-ignore
+    res.status(response.code).json(response);
+};
+
+export const saveUserPasswordHandler = async (req: Request, res: Response) =>  {
+    const response = await userController.savePassword(req);
+
+    res.status(response.code).json(response);
+};
+
+export const userPasswordResetCodeHandler = async (req: Request, res: Response) =>  {
+    const response = await userController.enterPasswordResetCode(req);
+
+    res.status(response.code).json(response);
+};

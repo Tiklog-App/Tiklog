@@ -12,7 +12,8 @@ import {
     newVehicleNameHandler,
     newVehicleTypeHandler,
     updateVehicleHandler,
-    updateVehicleNameHandler
+    updateVehicleNameHandler,
+    updateVehicleTypeHandler
 } from '../../routes/vehicleRoute';
 
 const vehicleEndpoints: RouteEndpoints = [
@@ -75,6 +76,12 @@ const vehicleEndpoints: RouteEndpoints = [
         method: 'post',
         path: '/vehicle-type',
         handler: newVehicleTypeHandler
+    },
+    {
+        name: 'update vehicle type',
+        method: 'put',
+        path: '/vehicle-type/:vehicleTypeId',
+        handler: updateVehicleTypeHandler
     },
     {
         name: 'delete vehicle type',

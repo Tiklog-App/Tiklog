@@ -213,7 +213,7 @@ export default class CustomerController {
      * Sends password reset link to customer email
      * and also cached the reset token, email and
      * customer id
-     * to redis for 3 minutes
+     * to redis for 1 hour
      * 
      */
     public async resetPassword (req: Request) {
@@ -252,7 +252,7 @@ export default class CustomerController {
 
             const response: HttpResponse<any> = {
                 code: HttpStatus.OK.code,
-                message: `If your email is registered with us, you will receive a password reset code. ${token}`
+                message: `If your email is registered with us, you will receive a password reset code.`
             };
         
             return Promise.resolve(response);
@@ -319,8 +319,8 @@ export default class CustomerController {
             if (redisData) {
                 const { token }: any = redisData;
                 
-            if(token !== customer.passwordResetCode)
-                return Promise.reject(CustomAPIError.response('Failed to save password, please try resetting password again', HttpStatus.BAD_REQUEST.code));
+                if(token !== customer.passwordResetCode)
+                    return Promise.reject(CustomAPIError.response('Failed to save password, please try resetting password again', HttpStatus.BAD_REQUEST.code));
             
                 const password = await this.passwordEncoder.encode(value.password as string);
                 const customerValues = {
@@ -548,12 +548,12 @@ export default class CustomerController {
                 };
 
                 let _email = ''
-                if(!customer.googleId || !customer.facebookId || !customer.appleId) {
-                    _email = value.email
+                if(!customer.googleId || !customer.facebookId || !customer.instagramId) {
+                    _email = value.email as string
                 };
 
                 let _phone = ''
-                if(customer.googleId || customer.facebookId || customer.appleId) {
+                if(customer.googleId || customer.facebookId || customer.instagramId) {
                     _phone = value.phone
                 };
 
@@ -632,12 +632,12 @@ export default class CustomerController {
                 };
 
                 let _email = ''
-                if(!customer.googleId || !customer.facebookId || !customer.appleId) {
-                    _email = value.email
+                if(!customer.googleId || !customer.facebookId || !customer.instagramId) {
+                    _email = value.email as string
                 };
 
                 let _phone = ''
-                if(customer.googleId || customer.facebookId || customer.appleId) {
+                if(customer.googleId || customer.facebookId || customer.instagramId) {
                     _phone = value.phone
                 };
 

@@ -969,8 +969,8 @@ export default class RiderController {
                 };
 
                 let _email = ''
-                if(!rider.googleId || !rider.facebookId) {
-                    _email = value.email
+                if(!rider.googleId || !rider.facebookId || !rider.instagramId) {
+                    _email = value.email as string
                 };
 
                 let _phone = ''
@@ -1054,8 +1054,8 @@ export default class RiderController {
                 };
 
                 let _email = ''
-                if(!rider.googleId || !rider.facebookId) {
-                    _email = value.email
+                if(!rider.googleId || !rider.facebookId || !rider.instagramId) {
+                    _email = value.email as string
                 };
 
                 let _phone = ''

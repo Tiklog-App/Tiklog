@@ -122,6 +122,32 @@ export default class Generic {
     return degrees * (Math.PI / 180);
   }
 
+  public static generatePassword(length = 12) {
+      const uppercaseLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const lowercaseLetters = 'abcdefghijklmnopqrstuvwxyz';
+      const numbers = '0123456789';
+      const specialCharacters = '!@#$%^&*()_-+=<>?/{}[]';
+    
+      const allChars = uppercaseLetters + lowercaseLetters + numbers + specialCharacters;
+    
+      let password = '';
+      password += uppercaseLetters[Math.floor(Math.random() * uppercaseLetters.length)];
+      password += lowercaseLetters[Math.floor(Math.random() * lowercaseLetters.length)];
+      password += numbers[Math.floor(Math.random() * numbers.length)];
+      password += specialCharacters[Math.floor(Math.random() * specialCharacters.length)];
+    
+      while (password.length < length) {
+        password += allChars[Math.floor(Math.random() * allChars.length)];
+      }
+    
+      return password;
+    
+    // Example: Generate a secure password of length 12
+    // const securePassword = generateSecurePassword();
+    // console.log(securePassword);
+    
+  }
+
   public static async fileExist(path: string) {
     try {
       await fs.access(path);

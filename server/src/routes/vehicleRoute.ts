@@ -64,6 +64,12 @@ export const newVehicleTypeHandler = authenticateRouteWrapper( async (req, res) 
     res.status(response.code).json(response);
 });
 
+export const updateVehicleTypeHandler = authenticateRouteWrapper( async (req, res) =>  {
+    const response = await vehicleController.editVehicleType(req);
+
+    res.status(response.code).json(response);
+});
+
 export const deleteVehicleTypeHandler = authenticateRouteWrapper( async (req, res) =>  {
     const response = await vehicleController.deleteVehicleType(req);
 

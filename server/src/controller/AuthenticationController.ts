@@ -13,9 +13,7 @@ import Generic from "../utils/Generic";
 import { $finishSavingRider, $loginSchemaRider, $saveRiderSchema, IRiderModel } from "../models/Rider";
 import { $loginSchema, IUserModel } from "../models/User";
 import RedisService from "../services/RedisService";
-import authService from "../services/AuthService";
 import { RIDER_STATUS_PENDING } from "../config/constants";
-import { Server, Socket } from 'socket.io';
 import RabbitMqService from "../services/RabbitMqService";
 import { decode } from 'jsonwebtoken';
 
@@ -224,7 +222,7 @@ export default class AuthenticationController {
         phone: value.phone
       });
       if(!user) return Promise.reject(CustomAPIError.response(HttpStatus.UNAUTHORIZED.value, HttpStatus.NOT_FOUND.code));
-      if(user.googleId || user.facebookId || user.appleId) {
+      if(user.googleId || user.facebookId || user.instagramId) {
         return Promise.reject(
           CustomAPIError
           .response(`You tried signing in as ${value.phone} using a password, which is not the authentication method you used during sign up. Try again using the authentication method you used during sign up.`, HttpStatus.BAD_REQUEST.code))
@@ -408,7 +406,7 @@ export default class AuthenticationController {
 
       const rider = await datasources.riderDAOService.findByAny({phone: value.phone});
       if(!rider) return Promise.reject(CustomAPIError.response(HttpStatus.UNAUTHORIZED.value, HttpStatus.BAD_REQUEST.code));
-      if(rider.googleId || rider.facebookId) {
+      if(rider.googleId || rider.facebookId || rider.instagramId) {
         return Promise.reject(
           CustomAPIError
           .response(`You tried signing in as ${value.phone} using a password, which is not the authentication method you used during sign up. Try again using the authentication method you used during sign up.`, HttpStatus.BAD_REQUEST.code))
@@ -498,45 +496,4 @@ export default class AuthenticationController {
           return Promise.reject(error)
       }
     };
-
-    public googleOAuth = (req: Request, res: Response, next: NextFunction) => {
-      try {
-        authService.authenticateGoogle()(req, res, next);
-      } catch (error) {
-        console.log(error, 'error from authenticate');
-        return Promise.reject(error);
-      }
-    };
-
-    public googleOAuthCallback(req: Request, res: Response) {
-      try {
-        authService.handleGoogleCallback()(req, res);
-      } catch (error) {
-        return Promise.reject(error);
-      }
-    };
-
-    public facebookOAuth = (req: Request, res: Response, next: NextFunction) => {
-      try {
-        authService.authenticateFacebook()(req, res, next);
-      } catch (error) {
-        return Promise.reject(error);
-      }
-    };
-
-    public facebookOAuthCallback(req: Request, res: Response,  next: NextFunction) {
-      try {
-        authService.handleFacebookCallback()(req, res, next);
-      } catch (error) {
-        return Promise.reject(error);
-      }
-    };
-    
-    public googleOAuthFailed(req: Request, res: Response) {
-      try {
-        res.send('error page')
-      } catch (error) {
-        return Promise.reject(error)
-      }
-    }
 }

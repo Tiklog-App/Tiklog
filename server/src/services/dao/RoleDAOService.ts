@@ -33,6 +33,10 @@ export default class RoleDAOService implements ICrudDAO<IRoleModel> {
     return this.roleRepository.findByIdPopulatePermissions(id, options);
   }
 
+  findByAnyPopulatePermissions(filter: FilterQuery<IRoleModel>, options?: QueryOptions): Promise<IRoleModel | null> {
+    return this.roleRepository.findByAnyPopulatePermissions(filter, options);
+  }
+
   findByAny(filter: FilterQuery<IRoleModel>, options?: QueryOptions): Promise<IRoleModel | null> {
     return this.roleRepository.findOne(filter, options);
   }

@@ -1,19 +1,24 @@
 import {
-    facebookOAutCallbackhHandler,
+    facebookOAuthCallbackHandler,
     facebookOAuthHandler,
+    facebookOAuthRiderCallbackHandler,
+    facebookOAuthRiderHandler,
     finishSignupHandler_Customer,
-  finishSignupHandler_Rider,
-  googleOAutCallbackhHandler,
-  googleOAuthFailedHandler,
-  googleOAuthHandler,
-  signInHandler_Admin,
-  signInHandler_Customer,
-  signInHandler_Rider,
-  signOutHandler,
-  signupHandler_Customer,
-  signupHandler_Rider  
+    finishSignupHandler_Rider,
+    googleOAuthCallbackRiderHandler,
+    googleOAuthCallbackhHandler,
+    googleOAuthHandler,
+    googleOAuthRiderHandler,
+    instagramOAuthCallbackHandler,
+    instagramOAuthHandler,
+    instagramOAuthRiderCallbackHandler,
+    instagramOAuthRiderHandler,
+    signInHandler_Admin,
+    signInHandler_Customer,
+    signInHandler_Rider,
+    signupHandler_Customer,
+    signupHandler_Rider  
 } from '../../routes/authRoute';
-
 import { appCommonTypes } from '../../@types/app-common';
 import RouteEndpoint = appCommonTypes.RouteEndpoints;
 
@@ -61,64 +66,76 @@ const authEndpoints: RouteEndpoint  = [
         handler: signupHandler_Rider
     },
     {
-        name: 'signOut',
-        method: 'put',
-        path: '/sign-out',
-        handler: signOutHandler
-    },
-    {
-        name: 'google OAuth rider',
-        method: 'get',
-        path: '/rider/google',
-        handler: googleOAuthHandler
-    },
-    {
-        name: 'google OAuth callback rider',
-        method: 'get',
-        path: '/rider/google/callback',
-        handler: googleOAutCallbackhHandler
-    },
-    {
-        name: 'facebook OAuth rider',
-        method: 'get',
-        path: '/rider/facebook',
-        handler: facebookOAuthHandler
-    },
-    {
-        name: 'facebook OAuth callback rider',
-        method: 'get',
-        path: '/rider/facebook/callback',
-        handler: facebookOAutCallbackhHandler
-    },
-    {
-        name: 'google OAuth',
+        name: 'google OAuth Customer',
         method: 'get',
         path: '/google',
         handler: googleOAuthHandler
     },
     {
-        name: 'google OAuth callback',
+        name: 'google OAuth callback customer',
         method: 'get',
         path: '/google/callback',
-        handler: googleOAutCallbackhHandler
+        handler: googleOAuthCallbackhHandler
     },
     {
-        name: 'facebook OAuth',
+        name: 'google OAuth rider',
+        method: 'get',
+        path: '/rider/google',
+        handler: googleOAuthRiderHandler
+    },
+    {
+        name: 'google OAuth callback rider',
+        method: 'get',
+        path: '/rider/google/callback',
+        handler: googleOAuthCallbackRiderHandler
+    },
+    {
+        name: 'facebook OAuth customer',
         method: 'get',
         path: '/facebook',
         handler: facebookOAuthHandler
     },
     {
-        name: 'facebook OAuth callback',
+        name: 'facebook OAuth callback customer',
         method: 'get',
         path: '/facebook/callback',
-        handler: facebookOAutCallbackhHandler
+        handler: facebookOAuthCallbackHandler
     },
     {
-        name: 'google OAuth failed',
+        name: 'facebook OAuth rider',
         method: 'get',
-        path: '/google/failed',
-        handler: googleOAuthFailedHandler
+        path: '/rider/facebook',
+        handler: facebookOAuthRiderHandler
+    },
+    {
+        name: 'facebook OAuth callback rider',
+        method: 'get',
+        path: '/rider/facebook/callback',
+        handler: facebookOAuthRiderCallbackHandler
+    },
+    {
+        name: 'instagram OAuth customer',
+        method: 'get',
+        path: '/instagram',
+        handler: instagramOAuthHandler
+    },
+    {
+        name: 'instagram OAuth callback customer',
+        method: 'get',
+        path: '/instagram/callback',
+        handler: instagramOAuthCallbackHandler
+    },
+    {
+        name: 'instagram OAuth rider',
+        method: 'get',
+        path: '/rider/instagram',
+        handler: instagramOAuthRiderHandler
+    },
+    {
+        name: 'instagram OAuth callback rider',
+        method: 'get',
+        path: '/rider/instagram/callback',
+        handler: instagramOAuthRiderCallbackHandler
     }
 ]
 

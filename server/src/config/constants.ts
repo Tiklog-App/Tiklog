@@ -93,4 +93,6 @@ import QueueEvents = appCommonTypes.QueueEvents;
 
   export const MAX_SIZE_IN_BYTE = 1000 * 1024; // 1MB
   export const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/jpg'];
-  export const SEVEN_DAYS_IN_MS = 7 * 24 * 60 * 60 * 1000
+  export const SEVEN_DAYS_IN_MS = 7 * 24 * 60 * 60 * 1000;
+
+  export const AGENDA_COLLECTION_NAME = 'vehicle_license'

@@ -8,7 +8,7 @@ interface IRider {
   other_names: string;
   password: string | null;
   confirm_password: string | null;
-  email: string;
+  email: string | null;
   phone: string;
   gender: string;
   profileImageUrl: string | null;
@@ -20,6 +20,7 @@ interface IRider {
   previous_password: string;
   googleId: string | null;
   facebookId: string | null;
+  instagramId: string | null;
   status: string;
   level: number;
   passwordResetCode: string | null;
@@ -38,7 +39,7 @@ const riderSchema = new Schema<IRider>({
   dob: { type: Date },
   password: { type: String },
   confirm_password: { type: String },
-  email: { type: String },
+  email: { type: String, allowNull: true },
   phone: { type: String },
   gender: { type: String },
   profileImageUrl: { type: String, allowNull: true },
@@ -47,6 +48,7 @@ const riderSchema = new Schema<IRider>({
   loginDate: { type: Date, allowNull: true },
   googleId: { type: String, allowNull: true },
   facebookId: { type: String, allowNull: true },
+  instagramId: { type: String, allowNull: true },
   roles: [{ type: Schema.Types.ObjectId, ref: 'Role' }],
   status: { type: String },
   level: { type: Number, default: 0 },

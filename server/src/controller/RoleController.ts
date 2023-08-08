@@ -54,7 +54,9 @@ export default class RoleController {
   public async getAllRoles(req: Request) {
     
     const options = {
-      slug: {$ne: settings.roles[0]}
+      slug: {
+        $nin: [settings.roles[0], settings.roles[1], settings.roles[2], settings.roles[3]]
+      }
     }
     const roles = await datasources.roleDAOService.findAll(options);
 

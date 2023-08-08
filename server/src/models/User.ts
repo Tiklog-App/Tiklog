@@ -11,13 +11,14 @@ interface IUser {
   phone: string;
   gender: string;
   previous_password: string;
-  // profileImageUrl: string | null;
+  profileImageUrl: string | null;
   active: boolean | null;
   loginToken: string | null;
   loginDate: Date | null;
   roles: mongoose.Types.ObjectId[];
   role: string;
   slug: string | null;
+  passwordResetCode: string | null;
 }
 
 const userSchema = new Schema<IUser>({
@@ -28,12 +29,13 @@ const userSchema = new Schema<IUser>({
   email: { type: String },
   phone: { type: String },
   gender: { type: String },
-  // profileImageUrl: { type: String, allowNull: true },
+  profileImageUrl: { type: String, allowNull: true },
   active: { type: Boolean, allowNull: true },
   loginToken: { type: String, allowNull: true },
   loginDate: { type: Date, allowNull: true },
   roles: [{ type: Schema.Types.ObjectId, ref: 'Role' }],
-  slug: { type: String, allowNull: true }
+  slug: { type: String, allowNull: true },
+  passwordResetCode: { type: String, allowNull: true }
 });
 
 userSchema.pre('find', function (next) {
@@ -71,6 +73,7 @@ export const $updateUserSchema: Joi.SchemaMap = {
   email: Joi.string().label('email'),
   gender: Joi.string().label('gender'),
   phone: Joi.string().label('phone'),
+  profileImageUrl: Joi.string().label('profile image')
 };
 
 export const $loginSchema: Joi.SchemaMap = {
@@ -94,6 +97,22 @@ export const $changePassword: Joi.SchemaMap = {
     .label('password'),
   confirm_password: Joi.ref("password"),
   previous_password: Joi.string().required().label('previous password')
+};
+
+export const $resetPassword: Joi.SchemaMap = {
+  email: Joi.string().required().label('email')
+};
+
+export const $savePasswordAfterReset: Joi.SchemaMap = {
+  password: Joi.string()
+    .regex(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[A-Za-z\d]{8,20}$/)
+    .messages({
+      'string.pattern.base': `Password does not meet requirements.`,
+    })
+    .required()
+    .label('password'),
+  confirm_password: Joi.ref("password"),
+  email: Joi.string().required().label('email')
 };
 
 export default User;

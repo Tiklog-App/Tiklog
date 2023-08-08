@@ -19,6 +19,8 @@ import RiderWalletRepository from "../../repositories/RiderWalletRepository";
 import BankRepository from "../../repositories/BankRepository";
 import AdminFeeRepository from "../../repositories/AdminFeeRepository";
 import PaymentRequestRepository from "../../repositories/PaymentRequestRepository";
+import TikLogDocsRepository from "../../repositories/TikLogDocsRepository";
+import FAQRepository from "../../repositories/FAQRepository";
 
 import PermissionDAOService from "./PermissionDAOService";
 import RoleDAOService from "./RoleDAOService";
@@ -41,6 +43,8 @@ import RiderWalletDAOService from "./RiderWalletDAOService";
 import BankDAOService from "./BankDAOService";
 import AdminFeeDAOService from "./AdminFeeDAOService";
 import PaymentRequestDAOService from "./PaymentRequestDAOService";
+import TikLogDocsDAOService from "./TikLogDocsDAOService";
+import FAQDAOService from "./FAQDAOService";
 
 const permissionRepository = new PermissionRepository();
 const roleRepository = new RoleRepository();
@@ -63,6 +67,8 @@ const riderWalletRepository = new RiderWalletRepository();
 const bankRepository = new BankRepository();
 const adminFeeRepository = new AdminFeeRepository();
 const paymentRequestRepository = new PaymentRequestRepository();
+const tikLogDocsRepository = new TikLogDocsRepository();
+const faqRepository = new FAQRepository();
 
 const permissionDAOService = new PermissionDAOService(permissionRepository);
 const roleDAOService = new RoleDAOService(roleRepository);
@@ -85,6 +91,8 @@ const riderWalletDAOService = new RiderWalletDAOService(riderWalletRepository);
 const bankDAOService = new BankDAOService(bankRepository);
 const adminFeeDAOService = new AdminFeeDAOService(adminFeeRepository);
 const paymentRequestDAOService = new PaymentRequestDAOService(paymentRequestRepository);
+const tikLogDocsDAOService = new TikLogDocsDAOService(tikLogDocsRepository);
+const faqDAOService = new FAQDAOService(faqRepository);
 
 export default {
     vehicleDAOService,
@@ -107,5 +115,7 @@ export default {
     riderWalletDAOService,
     bankDAOService,
     adminFeeDAOService,
-    paymentRequestDAOService
+    paymentRequestDAOService,
+    tikLogDocsDAOService,
+    faqDAOService
 }

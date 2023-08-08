@@ -1,7 +1,6 @@
 /**
  * This helper Class, executes commands in form of methods,we want to run at runtime.
  */
-
 import fs from 'fs/promises';
 import RoleRepository from '../repositories/RoleRepository';
 import PermissionRepository from '../repositories/PermissionRepository';
@@ -20,6 +19,8 @@ import settings, { MANAGE_ALL, MANAGE_SOME } from '../config/settings';
 import { IUserModel } from '../models/User';
 import Generic from '../utils/Generic';
 import { UPLOAD_BASE_PATH } from '../config/constants';
+import VehicleTypeRepository from '../repositories/VehicleTypeRepository';
+import vehicleTypes from '../resources/data/vehicleType.json';
 
 export default class CommandLineRunner {
   public static singleton: CommandLineRunner = new CommandLineRunner();
@@ -27,18 +28,21 @@ export default class CommandLineRunner {
   private permissionRepository: AbstractCrudRepository;
   private userRepository: AbstractCrudRepository;
   private bankRepository: BankRepository;
+  private vehicleTypeRepository: VehicleTypeRepository;
 
   constructor() {
     this.bankRepository = new BankRepository();
     this.roleRepository = new RoleRepository();
     this.permissionRepository = new PermissionRepository();
     this.userRepository = new UserRepository();
+    this.vehicleTypeRepository = new VehicleTypeRepository();
   }
 
   public static async run() {
     await this.singleton.loadDefaultRolesAndPermissions();
     await this.singleton.loadDefaultSuperAdmin();
     await this.singleton.loadPayStackBanks();
+    await this.singleton.loadVehicleTypes();
     // await this.singleton.syncRolesAndPermission()
   }
 
@@ -250,6 +254,24 @@ export default class CommandLineRunner {
         //@ts-ignore  
         adminRole?.permissions.push(perm._id);
         await adminRole?.save();
+      }
+    }
+  }
+
+  async loadVehicleTypes() {
+    const fetchVehicleTypes = await this.vehicleTypeRepository.findAll({})
+    //@ts-ignore
+    const existingSlugs = fetchVehicleTypes.map(types => types.slug);
+
+    for(let type of vehicleTypes){
+      if(!existingSlugs.includes(type.slug)){
+        
+        await this.vehicleTypeRepository.save({
+          vehicleType: type.vehicleType,
+          slug: type.slug,
+          speed: type.speed,
+          costPerKm: type.costPerKm,
+        } as any);
       }
     }
   }

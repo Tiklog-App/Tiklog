@@ -50,6 +50,10 @@ export default class CrudRepository<M extends Document, Id extends Types.ObjectI
     return this.model.findById(id as any, null, options).populate({ path: 'permissions', options: { strictPopulate: false } }).exec() as Promise<M | null>;
   }  
 
+  async findByAnyPopulatePermissions(filter: FilterQuery<M>, options?: QueryOptions): Promise<M | null> {
+    return this.model.findOne(filter, null, options).populate({ path: 'permissions', options: { strictPopulate: false } }).exec() as Promise<M | null>;
+  }  
+
   async findOne(filter: FilterQuery<M>, options?: QueryOptions): Promise<M | null> {
     return this.model.findOne(filter, null, options).exec();
   }

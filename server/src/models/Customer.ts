@@ -8,7 +8,7 @@ interface ICustomer {
   other_names: string;
   password: string | null;
   confirm_password: string | null;
-  email: string;
+  email: string | null;
   phone: string;
   gender: string;
   profileImageUrl: string | null;
@@ -18,7 +18,7 @@ interface ICustomer {
   dob: Date;
   previous_password: string;
   googleId: string | null;
-  appleId: string | null;
+  instagramId: string | null;
   facebookId: string | null;
   roles: mongoose.Types.ObjectId[];
   level: number;
@@ -33,7 +33,7 @@ const customerSchema = new Schema<ICustomer>({
   dob: { type: Date },
   password: { type: String, allowNull: true },
   confirm_password: { type: String, allowNull: true },
-  email: { type: String },
+  email: { type: String, allowNull: true },
   phone: { type: String },
   gender: { type: String },
   profileImageUrl: { type: String, allowNull: true },
@@ -41,7 +41,7 @@ const customerSchema = new Schema<ICustomer>({
   loginToken: { type: String, allowNull: true },
   loginDate: { type: Date, allowNull: true },
   googleId: { type: String, allowNull: true },
-  appleId: { type: String, allowNull: true },
+  instagramId: { type: String, allowNull: true },
   facebookId: { type: String, allowNull: true },
   roles: [{ type: Schema.Types.ObjectId, ref: 'Role' }],
   level: { type: Number, default: 0 },

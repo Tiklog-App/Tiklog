@@ -56,7 +56,7 @@ export default class DeliveryController {
 
         const response: HttpResponse<any> = {
             code: HttpStatus.OK.code,
-            message: 'Delivery was successful',
+            message: 'Delivery created successfully',
             result: delivery
         };
       
@@ -258,8 +258,6 @@ export default class DeliveryController {
         const deliveryRefNumber = lastDelivery.deliveryRefNumber;
         const estimatedDeliveryTime = lastDelivery.estimatedDeliveryTime;
 
-        const maxDistance = MAX_DISTANCE
-
         const riders = await RiderLocation.aggregate([
             {
               $geoNear: {
@@ -268,7 +266,7 @@ export default class DeliveryController {
                   coordinates: [customerLongitude, customerLatitude],
                 },
                 distanceField: 'distance',
-                maxDistance,
+                maxDistance: MAX_DISTANCE,
                 spherical: true,
               },
             },
@@ -278,17 +276,35 @@ export default class DeliveryController {
         ]).exec();
         if(!riders.length)
             return Promise.reject(CustomAPIError.response('No riders available at the moment', HttpStatus.NOT_FOUND.code));
-
+        
+        /*** Logic to find rider that meets these criteria
+         * 1. online
+         * 2. active
+         * 3. rider license is not expired
+         * 4. rider vehicle type is same as delivery vehicle type
+         */
         let rider: any = null;
-        for(const riderLoc of riders) {
+        for (const riderLoc of riders) {
             const _rider = await datasources.riderDAOService.findById(riderLoc.rider);
-            const _rider_license = await datasources.riderLicenseDAOService.findByAny({rider: riderLoc.rider})
-
-            if (_rider?.status === 'online' && _rider?.active && !_rider_license?.isExpired) {
+            const _rider_license = await datasources.riderLicenseDAOService.findByAny({ rider: riderLoc.rider });
+          
+            const isValidRider =
+              _rider?.status === 'online' &&
+              _rider?.active &&
+              !_rider_license?.isExpired;
+          
+            if (isValidRider) {
+              const riderVehicle = await datasources.vehicleDAOService.findAll({});
+              const vehicle = riderVehicle.find((vehicle: any) => vehicle.rider === _rider?._id);
+          
+              if (vehicle && vehicle.vehicleType === lastDelivery.vehicle) {
                 rider = _rider;
                 break;
+              }
             }
         }
+        /** Logic End */
+
         if(rider === null)
             return Promise.reject(CustomAPIError.response('No rider is currently online', HttpStatus.NOT_FOUND.code));
 
@@ -296,15 +312,22 @@ export default class DeliveryController {
             rider: rider?._id
         });
 
+        const bike = await datasources.vehicleTypeDAOService.findByAny({vehicleType: 'bike'});
+        const car = await datasources.vehicleTypeDAOService.findByAny({vehicleType: 'car'});
+        const bus = await datasources.vehicleTypeDAOService.findByAny({vehicleType: 'bus'});
+
+        if(!bike || !car || !bus)
+            return Promise.reject(CustomAPIError.response('Vehicle type not found', HttpStatus.NOT_FOUND.code))
+
         let speedInKmPerHour = 0;
         if(vehicle){
             //checks speed and fee based on vehicle selected
             if(vehicle?.vehicleType === 'bike') {
-                speedInKmPerHour += BIKE_SPEED
+                speedInKmPerHour += bike.speed
             } else if(vehicle?.vehicleType === 'car') {
-                speedInKmPerHour += CAR_SPEED
+                speedInKmPerHour += car.speed
             } else if(vehicle?.vehicleType === 'bus') {
-                speedInKmPerHour += BUS_SPEED
+                speedInKmPerHour += bus.speed
             } else {
                 speedInKmPerHour += AVERAGE_SPEED
             };
@@ -431,19 +454,26 @@ export default class DeliveryController {
 
         const { error, value } = Joi.object<any>($deliverySchema).validate(req.body);
         if(error) return Promise.reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
+
+        const bike = await datasources.vehicleTypeDAOService.findByAny({vehicleType: 'bike'});
+        const car = await datasources.vehicleTypeDAOService.findByAny({vehicleType: 'car'});
+        const bus = await datasources.vehicleTypeDAOService.findByAny({vehicleType: 'bus'});
+
+        if(!bike || !car || !bus)
+            return Promise.reject(CustomAPIError.response('Vehicle type not found', HttpStatus.NOT_FOUND.code))
         
         //checks speed and fee based on vehicle selected
         let speed = 0;
         let fee = 0;
         if(value.vehicle === 'bike') {
-            speed += BIKE_SPEED
-            fee += PRICE_PER_KM_BIKE
+            speed += bike.speed
+            fee += bike.costPerKm
         } else if(value.vehicle === 'car') {
-            speed += CAR_SPEED
-            fee += PRICE_PER_KM_CAR
+            speed += car.speed
+            fee += car.costPerKm
         } else if(value.vehicle === 'bus') {
-            speed += BUS_SPEED
-            fee += PRICE_PER_KM_BUS
+            speed += bus.speed
+            fee += bus.costPerKm
         } else {
             speed += AVERAGE_SPEED
             fee  += AVERAGE_PRICE_PER_KM
@@ -519,18 +549,25 @@ export default class DeliveryController {
         if(_delivery.status !== PENDING)
             return Promise.reject(CustomAPIError.response('Delivery can not be edited', HttpStatus.BAD_REQUEST.code));
 
+        const bike = await datasources.vehicleTypeDAOService.findByAny({vehicleType: 'bike'});
+        const car = await datasources.vehicleTypeDAOService.findByAny({vehicleType: 'car'});
+        const bus = await datasources.vehicleTypeDAOService.findByAny({vehicleType: 'bus'});
+
+        if(!bike || !car || !bus)
+            return Promise.reject(CustomAPIError.response('Vehicle type not found', HttpStatus.NOT_FOUND.code))
+        
         //checks speed and fee based on vehicle selected
         let speed = 0;
         let fee = 0;
         if(value.vehicle === 'bike') {
-            speed += BIKE_SPEED
-            fee += PRICE_PER_KM_BIKE
+            speed += bike.speed
+            fee += bike.costPerKm
         } else if(value.vehicle === 'car') {
-            speed += CAR_SPEED
-            fee += PRICE_PER_KM_CAR
+            speed += car.speed
+            fee += car.costPerKm
         } else if(value.vehicle === 'bus') {
-            speed += BUS_SPEED
-            fee += PRICE_PER_KM_BUS
+            speed += bus.speed
+            fee += bus.costPerKm
         } else {
             speed += AVERAGE_SPEED
             fee  += AVERAGE_PRICE_PER_KM

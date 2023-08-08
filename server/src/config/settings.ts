@@ -33,11 +33,20 @@ export const READ_VEHICLE = 'read_vehicle';
 export const CREATE_VEHICLE_TYPE = 'create_vehicle_type';
 export const DELETE_VEHICLE_TYPE = 'delete_vehicle_type';
 export const READ_VEHICLE_TYPE = 'read_vehicle_type';
+export const UPDATE_VEHICLE_TYPE = 'update_vehicle_type';
 
 export const CREATE_VEHICLE_NAME = 'create_vehicle_name';
 export const DELETE_VEHICLE_NAME = 'delete_vehicle_name';
 export const READ_VEHICLE_NAME = 'read_vehicle_name';
 export const UPDATE_VEHICLE_NAME = 'update_vehicle_name';
+
+export const CREATE_FAQ = 'create_faq';
+export const UPDATE_FAQ = 'update_faq';
+export const DELETE_FAQ = 'delete_faq';
+export const READ_FAQ = 'read_faq';
+
+export const CREATE_DOC = 'create_doc';
+export const UPDATE_DOC = 'update_doc';
 
 export const FETCH_LICENSE = 'fetch_license';
 
@@ -47,6 +56,15 @@ export const READ_PAYMENT_REQUEST = 'read_payment_request';
 
 export const FETCH_PERMISSIONS = 'fetch_permissions';
 export const MAKE_PAYMENT = 'make_payment';
+
+export const LOGIN_FAILED_URL = `${process.env.CLIENT_URL}/login-failed`;
+
+export const HOME_URL =  `${process.env.CLIENT_URL}/home`;
+
+export const SIGN_IN_SUCCESS_URL =  `${process.env.CLIENT_URL}/sign-up-success`;
+
+export const LOGIN_TOKEN = 'token';
+export const LOGIN_ERROR = 'loginError';
 
 const settings: AppSettings = {
   twilio: {
@@ -79,6 +97,11 @@ const settings: AppSettings = {
     client_secret: <string>process.env.FACEBOOK_CLIENT_SECRET,
     facebook_callbackURL: <string>process.env.FACEBOOK_CALLBACKURL
   },
+  instagramAuth: {
+    client_ID: <string>process.env.INSTAGRAM_CLIENT_ID,
+    client_secret: <string>process.env.INSTAGRAM_CLIENT_SECRET,
+    instagram_callbackURL: <string>process.env.INSTAGRAM_CALLBACKURL
+  },
   googleOAuthRider: {
     google_client_r_id: <string>process.env.GOOGLE_CLIENT_ID,
     google_client_r_secret: <string>process.env.GOOGLE_CLIENT_SECRET,
@@ -88,6 +111,11 @@ const settings: AppSettings = {
     client_r_ID: <string>process.env.FACEBOOK_CLIENT_ID,
     client_r_secret: <string>process.env.FACEBOOK_CLIENT_SECRET,
     facebook_r_callbackURL: <string>process.env.FACEBOOK_CALLBACKURL_RIDER
+  },
+  instagramAuthRider: {
+    client_r_ID: <string>process.env.INSTAGRAM_CLIENT_ID,
+    client_r_secret: <string>process.env.INSTAGRAM_CLIENT_SECRET,
+    instagram_r_callbackURL: <string>process.env.INSTAGRAM_CALLBACKURL_RIDER
   },
   rabbitMq: {
     connection: <string>process.env.AMQP_CONNECT
@@ -126,6 +154,7 @@ const settings: AppSettings = {
     CREATE_VEHICLE_TYPE,
     DELETE_VEHICLE_TYPE,
     READ_VEHICLE_TYPE,
+    UPDATE_VEHICLE_TYPE,
 
     CREATE_VEHICLE_NAME,
     DELETE_VEHICLE_NAME,
@@ -139,7 +168,15 @@ const settings: AppSettings = {
     READ_PAYMENT_REQUEST,
 
     FETCH_PERMISSIONS,
-    MAKE_PAYMENT
+    MAKE_PAYMENT,
+
+    READ_FAQ,
+    UPDATE_FAQ,
+    DELETE_FAQ,
+    CREATE_FAQ,
+
+    CREATE_DOC,
+    UPDATE_DOC
   ],
   roles: [
     'SUPER_ADMIN_ROLE',

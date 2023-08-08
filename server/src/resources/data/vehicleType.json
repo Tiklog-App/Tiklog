@@ -1,0 +1,20 @@
+[
+  {
+    "vehicleType": "bike",
+    "speed": 30,
+    "costPerKm": 150,
+    "slug": "BIKE"
+  },
+  {
+    "vehicleType": "car",
+    "speed": 20,
+    "costPerKm": 200,
+    "slug": "CAR"
+  },
+  {
+    "vehicleType": "bus",
+    "speed": 10,
+    "costPerKm": 250,
+    "slug": "BUS"
+  }
+]

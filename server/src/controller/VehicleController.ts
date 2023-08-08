@@ -29,10 +29,11 @@ import {
     UPDATE_VEHICLE_NAME,
     READ_VEHICLE_TYPE,
     DELETE_VEHICLE_TYPE,
-    CREATE_VEHICLE_TYPE
+    CREATE_VEHICLE_TYPE,
+    UPDATE_VEHICLE_TYPE
 } from "../config/settings";
 import { $saveVehicleNameSchema, IVehicleNameModel } from "../models/VehicleName";
-import { $saveVehicleTypeSchema, IVehicleTypeModel } from "../models/VehicleType";
+import { $saveVehicleTypeSchema, $updateVehicleTypeSchema, IVehicleTypeModel } from "../models/VehicleType";
 
 const form = formidable({ uploadDir: UPLOAD_BASE_PATH });
 
@@ -245,6 +246,48 @@ export default class VehicleController {
             code: HttpStatus.OK.code,
             message: 'Vehicle type created successfully.',
             result: vehicleType
+        };
+      
+        return Promise.resolve(response);
+    };
+
+    @TryCatch
+    @HasPermission([MANAGE_ALL, UPDATE_VEHICLE_TYPE])
+    public async editVehicleType(req: Request) {
+
+        const vehicleTypeId = req.params.vehicleTypeId;
+
+        const { error, value } = Joi.object<IVehicleTypeModel>($updateVehicleTypeSchema).validate(req.body);
+        if(error) return Promise.reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
+        
+        const vehicle_type = await datasources.vehicleTypeDAOService.findById(vehicleTypeId);
+        if(!vehicle_type)
+            return Promise.reject(CustomAPIError.response('Vehicle type not found', HttpStatus.NOT_FOUND.code));
+
+        const slug = Generic.generateSlug(value.vehicleType)
+
+        const _vehicleType = await datasources.vehicleTypeDAOService.findByAny({
+            slug 
+        })
+        if(value.vehicleType && vehicle_type?.vehicleType !== value.vehicleType) {
+            if(_vehicleType) {
+                return Promise.reject(CustomAPIError.response('Vehicle type already exist', HttpStatus.BAD_REQUEST.code));
+            }
+        };
+        
+        const vehicleTypeValues: Partial<any> = {
+            ...value,
+            slug: Generic.generateSlug(value.vehicleType)
+        }
+
+        await datasources.vehicleTypeDAOService.update(
+            { _id: vehicleTypeId },
+            vehicleTypeValues
+        );
+
+        const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: 'Vehicle type updated successfully.'
         };
       
         return Promise.resolve(response);

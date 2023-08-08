@@ -6,8 +6,11 @@ import {
     deleteUserHandler,
     getUserHandler,
     getUsersHandler,
+    resetUserPasswordHandler,
+    saveUserPasswordHandler,
     updateUserHandler,
-    updateUserStatusHandler
+    updateUserStatusHandler,
+    userPasswordResetCodeHandler
 } from '../../routes/userRoute';
 
 const userEndpoints: RouteEndpoints = [
@@ -52,7 +55,25 @@ const userEndpoints: RouteEndpoints = [
         method: 'get',
         path: '/user/:userId',
         handler: getUserHandler
-    }
+    },
+    {
+        name: 'save user password',
+        method: 'put',
+        path: '/password-reset/save-user-password',
+        handler: saveUserPasswordHandler
+    },
+    {
+        name: 'reset user password',
+        method: 'post',
+        path: '/password-reset-user',
+        handler: resetUserPasswordHandler
+    },
+    {
+        name: 'user password reset code',
+        method: 'post',
+        path: '/user-password-reset-code',
+        handler: userPasswordResetCodeHandler
+    },
 ];
 
 export default userEndpoints;

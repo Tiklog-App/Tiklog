@@ -13,6 +13,7 @@ const database = {
     await mongoose.connect(mongoUrl);
     console.log('MongoDB Connected Successfully');
   },
+  mongoUrl
 };
 
 export default database;

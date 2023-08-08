@@ -67,6 +67,7 @@ export declare namespace appCommonTypes {
     | 'create_vehicle_type'
     | 'delete_vehicle_type'
     | 'read_vehicle_type'
+    | 'update_vehicle_type'
     | 'create_vehicle_name'
     | 'delete_vehicle_name'
     | 'read_vehicle_name'
@@ -75,7 +76,13 @@ export declare namespace appCommonTypes {
     | 'read_admin_fees'
     | 'read_payment_request'
     | 'fetch_permissions'
-    | 'make_payment';
+    | 'make_payment'
+    | 'create_faq'
+    | 'delete_faq'
+    | 'update_faq'
+    | 'read_faq'
+    | 'create_doc'
+    | 'update_doc';
 
   type AuthPayload = {
     permissions: IPermission[];
@@ -149,6 +156,11 @@ export declare namespace appCommonTypes {
       client_secret: string,
       facebook_callbackURL: string
     },
+    instagramAuth: {
+      client_ID: string,
+      client_secret: string,
+      instagram_callbackURL: string
+    },
     googleOAuthRider: {
       google_client_r_id: string,
       google_client_r_secret: string,
@@ -158,6 +170,11 @@ export declare namespace appCommonTypes {
       client_r_ID: string,
       client_r_secret: string,
       facebook_r_callbackURL: string
+    },
+    instagramAuthRider: {
+      client_r_ID: string,
+      client_r_secret: string,
+      instagram_r_callbackURL: string
     },
     rabbitMq: {
       connection: string
