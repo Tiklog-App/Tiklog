@@ -433,10 +433,10 @@ export default class CustomerController {
     };
 
     @TryCatch
-    @HasPermission([CUSTOMER_PERMISSION, MANAGE_ALL, MANAGE_SOME, READ_CUSTOMER])
+    @HasPermission([MANAGE_ALL, MANAGE_SOME, READ_CUSTOMER])
     public async getSingleAddress(req: Request) {
         
-        const address = await datasources.customerAddressDAOService.findById(req.params.id);
+        const address = await datasources.customerAddressDAOService.findByAny({customer: req.params.id});
         if(!address)
             return Promise.reject(CustomAPIError.response('Address not found', HttpStatus.NOT_FOUND.code));
 
