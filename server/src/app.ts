@@ -9,7 +9,7 @@ import globalExceptionHandler from './middleware/globalExceptionHandler';
 import router from './routes';
 import session from 'express-session';
 import passport from 'passport';
-import '../src/services/PassportService';
+require('./services/PassportService');
 
 const app = express();
 export const corsOptions = {
