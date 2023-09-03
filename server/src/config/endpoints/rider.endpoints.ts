@@ -12,8 +12,10 @@ import {
     getRiderAddressesHandler,
     getRiderHandler,
     getRiderLocationHandler,
+    getRiderRequestsHandler,
     getRidersHandler,
     getSingleRiderAddressHandler,
+    getSingleRiderRequestHandler,
     isExpiredLicenseHandler,
     resetRiderPasswordHandler,
     riderLicenseHandler,
@@ -176,9 +178,9 @@ const riderEndpoints: RouteEndpoints = [
         handler: deleteRiderLicenseHandler
     },
     {
-        name: 'check rider expired license',
+        name: 'update rider expired license to false',
         method: 'put',
-        path: '/update-rider-license-expired',
+        path: '/update-rider-license-expired/:licenseId',
         handler: isExpiredLicenseHandler
     },
     {
@@ -192,6 +194,18 @@ const riderEndpoints: RouteEndpoints = [
         method: 'put',
         path: '/update-rider-bank-details',
         handler: updateRiderBankDetailHandler
+    },
+    {
+        name: 'get rider requests',
+        method: 'get',
+        path: '/rider-requests',
+        handler: getRiderRequestsHandler
+    },
+    {
+        name: 'get rider request',
+        method: 'get',
+        path: '/rider-request/:requestId',
+        handler: getSingleRiderRequestHandler
     }
 ];
 

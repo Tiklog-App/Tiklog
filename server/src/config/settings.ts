@@ -57,6 +57,8 @@ export const READ_PAYMENT_REQUEST = 'read_payment_request';
 export const FETCH_PERMISSIONS = 'fetch_permissions';
 export const MAKE_PAYMENT = 'make_payment';
 
+export const READ_RIDER_REQUEST = 'read_rider_request';
+
 export const LOGIN_FAILED_URL = `${process.env.CLIENT_URL}/login-failed`;
 
 export const HOME_URL =  `${process.env.CLIENT_URL}/home`;
@@ -176,7 +178,9 @@ const settings: AppSettings = {
     CREATE_FAQ,
 
     CREATE_DOC,
-    UPDATE_DOC
+    UPDATE_DOC,
+
+    READ_RIDER_REQUEST
   ],
   roles: [
     'SUPER_ADMIN_ROLE',

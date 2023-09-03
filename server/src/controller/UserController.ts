@@ -49,7 +49,7 @@ export default class UserController {
    * can do this 
    */
   @TryCatch
-  @HasPermission([MANAGE_ALL, UPDATE_USER])
+  // @HasPermission([MANAGE_ALL, UPDATE_USER])
   public async updateUser (req: Request) {
       const customer = await this.doUpdateUser(req);
 
@@ -70,7 +70,7 @@ export default class UserController {
   * permission can do this 
   */
   @TryCatch
-  @HasPermission([MANAGE_ALL, UPDATE_USER])
+  // @HasPermission([MANAGE_ALL, UPDATE_USER])
   public  async changePassword (req: Request) {
     const user = await this.doChangePassword(req);
 

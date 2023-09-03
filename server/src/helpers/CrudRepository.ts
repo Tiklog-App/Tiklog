@@ -42,6 +42,44 @@ export default class CrudRepository<M extends Document, Id extends Types.ObjectI
     return query.exec();
   }
 
+  async findAllRiderRequest(filter?: FilterQuery<M>, options?: QueryOptions & { search?: any }): Promise<Array<M>> {
+    let query = filter
+                  ? this.model.find(filter, options)
+                    .populate({
+                      path: 'rider',
+                      select: '_id phone status busy dob email gender profileImageUrl firstName lastName other_names accountName accountNumber bankName createdAt'
+                    })
+                    .populate({
+                      path: 'customer',
+                      select: '_id phone dob email firstName gender lastName other_names createdAt'              
+                    })
+                    .populate('delivery')
+                  : this.model.find({}, options)
+                    .populate('rider')
+                    .populate('customer')
+                    .populate('delivery')
+
+    if (options?.search && options?.searchFields) {
+      const searchRegex = new RegExp(options?.search, 'i');
+      const searchConditions = options.searchFields.map((field: any) => ({ [field]: searchRegex }));
+      query = query.find({ $or: searchConditions });
+    }
+
+    // Sorting
+    if (options?.sort) {
+      query.sort(options.sort);
+    } else {
+      query.sort({ createdAt: -1 });
+    }
+
+    // Limiting
+    if (options?.limit) {
+      query.limit(options.limit);
+    }
+
+    return query.exec();
+  }
+
   async findById(id: Id, options?: QueryOptions): Promise<M | null> {
     return this.model.findById(id as any, null, options).exec();
   }

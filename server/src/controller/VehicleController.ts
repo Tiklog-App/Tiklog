@@ -340,8 +340,11 @@ export default class VehicleController {
                 if(error) return reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
                     
                 const _vehicle = await datasources.vehicleDAOService.findByAny({
-                    rider: riderId
-                })
+                    $or: [
+                        { rider: riderId },
+                        { licencePlateNumber: value.licencePlateNumber }
+                    ]
+                });
                 if(_vehicle)
                     return reject(CustomAPIError.response('Vehicle already exist', HttpStatus.BAD_REQUEST.code));
 

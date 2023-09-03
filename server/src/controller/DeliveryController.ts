@@ -258,7 +258,7 @@ export default class DeliveryController {
         const deliveryRefNumber = lastDelivery.deliveryRefNumber;
         const estimatedDeliveryTime = lastDelivery.estimatedDeliveryTime;
 
-        const riders = await RiderLocation.aggregate([
+        const riderLocations = await RiderLocation.aggregate([
             {
               $geoNear: {
                 near: {
@@ -274,8 +274,12 @@ export default class DeliveryController {
                 $sort: { distance: 1 }
             }
         ]).exec();
-        if(!riders.length)
-            return Promise.reject(CustomAPIError.response('No riders available at the moment', HttpStatus.NOT_FOUND.code));
+
+        if(!riderLocations.length)
+            return Promise.reject(CustomAPIError.response('No rider is available at the moment', HttpStatus.NOT_FOUND.code));
+
+        const riderIds = riderLocations.map((riderLocation) => riderLocation.rider);
+        const riders = await datasources.riderDAOService.findAll({ _id: { $in: riderIds } });
         
         /*** Logic to find rider that meets these criteria
          * 1. online
@@ -285,19 +289,19 @@ export default class DeliveryController {
          */
         let rider: any = null;
         for (const riderLoc of riders) {
-            const _rider = await datasources.riderDAOService.findById(riderLoc.rider);
-            const _rider_license = await datasources.riderLicenseDAOService.findByAny({ rider: riderLoc.rider });
+            
+            const _rider = await datasources.riderDAOService.findById(riderLoc._id);
+            const _rider_license = await datasources.riderLicenseDAOService.findByAny({ rider: riderLoc._id });
           
             const isValidRider =
               _rider?.status === 'online' &&
               _rider?.active &&
               !_rider_license?.isExpired;
-          
+
             if (isValidRider) {
-              const riderVehicle = await datasources.vehicleDAOService.findAll({});
-              const vehicle = riderVehicle.find((vehicle: any) => vehicle.rider === _rider?._id);
-          
-              if (vehicle && vehicle.vehicleType === lastDelivery.vehicle) {
+              const riderVehicle = await datasources.vehicleDAOService.findByAny({rider: _rider._id});
+
+              if (riderVehicle && riderVehicle.vehicleType === lastDelivery.vehicle) {
                 rider = _rider;
                 break;
               }
@@ -333,14 +337,14 @@ export default class DeliveryController {
             };
         }
 
-        let estimatedTimeToSender = 0
-        riders.forEach(elem => {
-            const distanceKm = elem.distance / 1000;
-            estimatedTimeToSender += distanceKm / speedInKmPerHour
-        });
+        const riderLoc = riderLocations.find((data) => data.rider.equals(rider.id));
+        const estimatedTimeToSender = () => {
+            const distanceKm = riderLoc.distance / 1000;
+            return distanceKm / speedInKmPerHour
+        }
 
-        const hours = Math.floor(estimatedTimeToSender);
-        const minutes = Math.round((estimatedTimeToSender - hours) * 60);
+        const hours = Math.floor(estimatedTimeToSender());
+        const minutes = Math.round((estimatedTimeToSender() - hours) * 60);
 
         const pinRiderLoc = await datasources.riderLocationDAOService.findByAny({
             rider: rider._id

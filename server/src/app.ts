@@ -16,6 +16,8 @@ export const corsOptions = {
   origin: [
     'http://localhost:3000',
     'http://localhost:3002',
+    'http://127.0.0.1:5173',
+    'http://localhost:3001',
     <string>process.env.CLIENT_URL
   ],
   credentials: true,

@@ -13,7 +13,7 @@ import SendMailService from "../services/SendMailService";
 import Generic from "../utils/Generic";
 import formidable, { File } from 'formidable';
 import { ALLOWED_FILE_TYPES, CHANGE_RIDER_PASSWORD, MAX_SIZE_IN_BYTE, MESSAGES, RIDER_STATUS_OFFLINE, RIDER_STATUS_ONLINE, RIDER_STATUS_PENDING, UPLOAD_BASE_PATH } from "../config/constants";
-import settings, { CUSTOMER_PERMISSION, DELETE_CUSTOMER, FETCH_LICENSE, MANAGE_ALL, MANAGE_SOME, READ_RIDER, RIDER_PERMISSION } from "../config/settings";
+import settings, { CUSTOMER_PERMISSION, DELETE_CUSTOMER, FETCH_LICENSE, MANAGE_ALL, MANAGE_SOME, READ_RIDER, READ_RIDER_REQUEST, RIDER_PERMISSION } from "../config/settings";
 import { UPDATE_RIDER } from "../config/settings";
 import { $bankDetailRider, $changePassword, $editRiderProfileSchema, $resetPassword, $savePasswordAfterReset, $updateRiderSchema, IRiderModel } from "../models/Rider";
 import { $saveRiderAddress, $updateRiderAddress, IRiderAddressModel } from "../models/RiderAddress";
@@ -23,6 +23,11 @@ import { $licenseSchema, IRiderLicenseModel } from "../models/RiderLicense";
 const redisService = new RedisService();
 const sendMailService = new SendMailService();
 const form = formidable({ uploadDir: UPLOAD_BASE_PATH });
+
+export const riderRequestSchema: Joi.SchemaMap<any> =
+  {
+    riderId: Joi.string().required().label("rider id"),
+  };
 
 export default class RiderController {
     private declare readonly passwordEncoder: BcryptPasswordEncoder;
@@ -161,28 +166,24 @@ export default class RiderController {
     };
 
     @TryCatch
-    @HasPermission([RIDER_PERMISSION])
+    @HasPermission([MANAGE_ALL, UPDATE_RIDER])
     public async isExpiredLicense(req: Request) {
 
-        //@ts-ignore
-        const riderId = req.user._id;
+        const licenseId = req.params.licenseId;
 
-        const findLicense = await datasources.riderLicenseDAOService.findByAny({
-            rider: riderId
-        });
+        const findLicense = await datasources.riderLicenseDAOService.findById(licenseId);
         if(!findLicense)
             return Promise.reject(CustomAPIError.response('License not found', HttpStatus.NOT_FOUND.code));
 
-        if(new Date(findLicense.expiryDate) <= new Date()) {
-            await datasources.riderLicenseDAOService.update(
-                { _id: findLicense._id },
-                { isExpired: true }
-            )
-        };
+        
+        await datasources.riderLicenseDAOService.update(
+            { _id: findLicense._id },
+            { isExpired: false }
+        )
 
         const response: HttpResponse<any> = {
             code: HttpStatus.OK.code,
-            message: HttpStatus.OK.value
+            message: "Rider license successfully updated"
         };
       
         return Promise.resolve(response);
@@ -922,7 +923,7 @@ export default class RiderController {
                     ...value,
                     licenseImageUrl: license_image && licenseImageUrl
                 };
-
+                console.log(licenseValues)
                 const license = await datasources.riderLicenseDAOService.updateByAny(
                     { _id: rider?._id },
                     licenseValues
@@ -1158,5 +1159,58 @@ export default class RiderController {
         return rider;
 
     };
+
+    @TryCatch
+    @HasPermission([MANAGE_ALL, RIDER_PERMISSION, READ_RIDER_REQUEST])
+    public async getRequests(req: Request) {
+        const { error, value } = Joi.object<any>(
+            riderRequestSchema
+          ).validate(req.body);
+      
+          if (error)
+            return Promise.reject(
+              CustomAPIError.response(
+                error.details[0].message,
+                HttpStatus.BAD_REQUEST.code
+              )
+            );
+
+        const rider = await datasources.riderDAOService.findById(value.riderId);
+
+        if(!rider)
+            return Promise.reject(CustomAPIError.response('Rider does not exist', HttpStatus.BAD_REQUEST.code));
+
+        const options = {
+            search: req.query.search,
+            searchFields: ['deliveryRefNumber']
+        };
+        const riderRequests = await datasources.notificationDAOService.findAllRiderRequest({rider: rider._id});
+
+        const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: 'Successful.',
+            results: riderRequests
+        };
+        return Promise.resolve(response);
+    }
+
+    @TryCatch
+    @HasPermission([MANAGE_ALL, RIDER_PERMISSION, READ_RIDER_REQUEST])
+    public async getSingleRequest(req: Request) {
+        const requestId = req.params.requestId;
+
+        const request = await datasources.notificationDAOService.findById(requestId);
+
+        if(!request)
+            return Promise.reject(CustomAPIError.response('Request does not exist', HttpStatus.BAD_REQUEST.code));
+
+        const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: 'Successful.',
+            result: request
+        };
+        return Promise.resolve(response);
+    }
+
 
 }

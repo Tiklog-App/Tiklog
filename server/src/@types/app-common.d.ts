@@ -82,7 +82,8 @@ export declare namespace appCommonTypes {
     | 'update_faq'
     | 'read_faq'
     | 'create_doc'
-    | 'update_doc';
+    | 'update_doc'
+    | 'read_rider_request';
 
   type AuthPayload = {
     permissions: IPermission[];

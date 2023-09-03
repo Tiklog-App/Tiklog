@@ -210,7 +210,13 @@ class RabbitMqService {
       if(driverResponse.availability) {
         customerSocket.emit('riderResponse', notification);
         this.riderAvailability(driverResponse.availability);
-        // await redisService.deleteRedisKey(PACKAGE_REQUEST_INFO)
+        const redisData = await redisService.getToken(PACKAGE_REQUEST_INFO);
+        const { riderId, deliveryId }: any = redisData;
+        await datasources.deliveryDAOService.updateByAny(
+          { _id: deliveryId },
+          { rider: riderId }
+        )
+
       } else {
         this.riderAvailability(driverResponse.availability);
         customerSocket.emit('riderDeclined', 'Rider declined your request');
@@ -223,13 +229,14 @@ class RabbitMqService {
   async riderAvailability(availabilityStatus: boolean): Promise<void> {
     const keys = PACKAGE_REQUEST_INFO
     const redisData = await redisService.getToken(keys);
-    const {deliveryRefNumber, riderId, customerId }: any = redisData;
+    const {deliveryId, riderId, customerId, deliveryRefNumber }: any = redisData;
 
     await datasources.notificationDAOService.create({
       deliveryRefNumber: deliveryRefNumber,
       riderAvailabilityStatus: availabilityStatus,
       rider: riderId,
-      customer: customerId
+      customer: customerId,
+      delivery: deliveryId
     } as any);
 
   };

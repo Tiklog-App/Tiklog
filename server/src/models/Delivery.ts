@@ -29,7 +29,7 @@ interface IDelivery {
   deliveryFee: number,
   riderName: string,
   riderPhone: string,
-  rider: mongoose.Types.ObjectId,
+  rider: mongoose.Types.ObjectId | null,
   customer: mongoose.Types.ObjectId,
   estimatedDeliveryTime: string,
   deliveryRefNumber: string
@@ -77,7 +77,7 @@ const deliverySchema = new Schema<IDelivery>({
   deliveryFee: { type: Number },
   riderName: { type: String },
   riderPhone: { type: String },
-  rider: { type: Schema.Types.ObjectId, ref: 'Rider' },
+  rider: { type: Schema.Types.ObjectId, ref: 'Rider', allowNull: true },
   customer: { type: Schema.Types.ObjectId, ref: 'Customer' },
   estimatedDeliveryTime: { type: String },
   deliveryRefNumber: { type: String }

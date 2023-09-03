@@ -25,6 +25,10 @@ export default class NotificationDAOService implements ICrudDAO<INotificationMod
     return this.notificationRepository.findAll(filter, options);
   }
 
+  findAllRiderRequest(filter?: FilterQuery<INotificationModel>, options?: QueryOptions): Promise<INotificationModel[]> {
+    return this.notificationRepository.findAllRiderRequest(filter, options);
+  }
+
   findById(id: any, options?: QueryOptions): Promise<INotificationModel | null> {
     return this.notificationRepository.findById(id, options);
   }

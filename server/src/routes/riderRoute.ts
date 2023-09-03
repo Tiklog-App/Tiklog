@@ -171,3 +171,15 @@ export const updateRiderBankDetailHandler = authenticateRouteWrapper(async (req,
 
     res.status(response.code).json(response);
 });
+
+export const getRiderRequestsHandler = authenticateRouteWrapper( async (req, res) =>  {
+    const response = await riderController.getRequests(req);
+
+    res.status(response.code).json(response);
+});
+
+export const getSingleRiderRequestHandler = authenticateRouteWrapper( async (req, res) =>  {
+    const response = await riderController.getSingleRequest(req);
+
+    res.status(response.code).json(response);
+});
