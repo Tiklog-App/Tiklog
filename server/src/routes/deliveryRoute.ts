@@ -11,6 +11,12 @@ export const createDeliveryHandler = authenticateRouteWrapper( async (req, res) 
     res.status(response.code).json(response);
 });
 
+export const payForDeliveryHandler = authenticateRouteWrapper( async (req, res) =>  {
+    const response = await deliveryController.payForDelivery(req);
+
+    res.status(response.code).json(response);
+});
+
 export const editDeliveryHandler = authenticateRouteWrapper( async (req, res) =>  {
     const response = await deliveryController.editDelivery(req);
 

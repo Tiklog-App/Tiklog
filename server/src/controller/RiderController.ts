@@ -142,6 +142,24 @@ export default class RiderController {
     };
 
     @TryCatch
+    @HasPermission([RIDER_PERMISSION, MANAGE_ALL])
+    public async getRiderLicense(req: Request) {
+        const licenseId = req.params.licenseId;
+
+        const license = await datasources.riderLicenseDAOService.findById(licenseId);
+        if(!license)
+            return Promise.reject(CustomAPIError.response('License does not exist', HttpStatus.NOT_FOUND.code));
+
+        const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: HttpStatus.OK.value,
+            result: license
+        };
+        
+        return Promise.resolve(response);
+    }
+
+    @TryCatch
     @HasPermission([RIDER_PERMISSION])
     public async deleteLicense(req: Request) {
 

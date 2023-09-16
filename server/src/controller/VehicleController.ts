@@ -73,13 +73,13 @@ export default class VehicleController {
     @HasPermission([RIDER_PERMISSION])
     public async getSingleVehicle(req: Request) {
 
-        const vehicleId = req.params.vehicleId
+        const riderId = req.params.riderId
 
-        const _vehicle = await datasources.vehicleDAOService.findById(vehicleId);
-        if(!_vehicle)
+        const vehicle = await datasources.vehicleDAOService.findByAny({
+            rider: riderId
+        });
+        if(!vehicle)
             return Promise.reject(CustomAPIError.response('Vehicle does not exist', HttpStatus.NOT_FOUND.code));
-
-        const vehicle = await datasources.vehicleDAOService.findById(vehicleId);
 
         const response: HttpResponse<any> = {
             code: HttpStatus.OK.code,

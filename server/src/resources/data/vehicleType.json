@@ -12,9 +12,15 @@
     "slug": "CAR"
   },
   {
-    "vehicleType": "bus",
+    "vehicleType": "van",
     "speed": 10,
     "costPerKm": 250,
-    "slug": "BUS"
+    "slug": "VAN"
+  },
+  {
+    "vehicleType": "truck",
+    "speed": 5,
+    "costPerKm": 300,
+    "slug": "TRUCK"
   }
 ]

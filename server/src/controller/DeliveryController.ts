@@ -1,5 +1,4 @@
 import { Request } from 'express';
-import { appEventEmitter } from '../services/AppEventEmitter';
 import { HasPermission, TryCatch } from "../decorators";
 import HttpStatus from "../helpers/HttpStatus";
 import CustomAPIError from "../exceptions/CustomAPIError";
@@ -10,20 +9,10 @@ import { $deliverySchema, $editDeliverySchema, IDeliveryModel } from '../models/
 import Generic from '../utils/Generic';
 import {
     PENDING,
-    CREATE_DELIVERY,
-    BIKE_SPEED,
-    CAR_SPEED,
-    BUS_SPEED,
-    PRICE_PER_KM_BIKE,
-    PRICE_PER_KM_CAR,
-    PRICE_PER_KM_BUS,
     MAX_DISTANCE,
-    AVERAGE_SPEED,
-    AVERAGE_PRICE_PER_KM,
     DELIVERED,
     ON_TRANSIT,
     CANCELED,
-    EDIT_DELIVERY,
     PACKAGE_REQUEST_INFO
 } from '../config/constants';
 import HttpResponse = appCommonTypes.HttpResponse;
@@ -57,6 +46,21 @@ export default class DeliveryController {
         const response: HttpResponse<any> = {
             code: HttpStatus.OK.code,
             message: 'Delivery created successfully',
+            result: delivery
+        };
+      
+        return Promise.resolve(response);
+    
+    };
+    
+    @TryCatch
+    @HasPermission([CUSTOMER_PERMISSION])
+    public async payForDelivery (req: Request) {
+        const delivery = await this.doPayForDelivery(req);
+
+        const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: 'Payment was successful',
             result: delivery
         };
       
@@ -318,9 +322,10 @@ export default class DeliveryController {
 
         const bike = await datasources.vehicleTypeDAOService.findByAny({vehicleType: 'bike'});
         const car = await datasources.vehicleTypeDAOService.findByAny({vehicleType: 'car'});
-        const bus = await datasources.vehicleTypeDAOService.findByAny({vehicleType: 'bus'});
+        const van = await datasources.vehicleTypeDAOService.findByAny({vehicleType: 'van'});
+        const truck = await datasources.vehicleTypeDAOService.findByAny({vehicleType: 'truck'});
 
-        if(!bike || !car || !bus)
+        if(!bike || !car || !van || !truck)
             return Promise.reject(CustomAPIError.response('Vehicle type not found', HttpStatus.NOT_FOUND.code))
 
         let speedInKmPerHour = 0;
@@ -330,10 +335,10 @@ export default class DeliveryController {
                 speedInKmPerHour += bike.speed
             } else if(vehicle?.vehicleType === 'car') {
                 speedInKmPerHour += car.speed
-            } else if(vehicle?.vehicleType === 'bus') {
-                speedInKmPerHour += bus.speed
+            } else if(vehicle?.vehicleType === 'van') {
+                speedInKmPerHour += van.speed
             } else {
-                speedInKmPerHour += AVERAGE_SPEED
+                speedInKmPerHour += truck.speed
             };
         }
 
@@ -461,9 +466,10 @@ export default class DeliveryController {
 
         const bike = await datasources.vehicleTypeDAOService.findByAny({vehicleType: 'bike'});
         const car = await datasources.vehicleTypeDAOService.findByAny({vehicleType: 'car'});
-        const bus = await datasources.vehicleTypeDAOService.findByAny({vehicleType: 'bus'});
+        const van = await datasources.vehicleTypeDAOService.findByAny({vehicleType: 'van'});
+        const truck = await datasources.vehicleTypeDAOService.findByAny({vehicleType: 'truck'});
 
-        if(!bike || !car || !bus)
+        if(!bike || !car || !van || !truck)
             return Promise.reject(CustomAPIError.response('Vehicle type not found', HttpStatus.NOT_FOUND.code))
         
         //checks speed and fee based on vehicle selected
@@ -475,12 +481,12 @@ export default class DeliveryController {
         } else if(value.vehicle === 'car') {
             speed += car.speed
             fee += car.costPerKm
-        } else if(value.vehicle === 'bus') {
-            speed += bus.speed
-            fee += bus.costPerKm
+        } else if(value.vehicle === 'van') {
+            speed += van.speed
+            fee += van.costPerKm
         } else {
-            speed += AVERAGE_SPEED
-            fee  += AVERAGE_PRICE_PER_KM
+            speed += truck.speed
+            fee += truck.costPerKm
         };
 
         const distance = Generic
@@ -498,10 +504,10 @@ export default class DeliveryController {
             customer: customerId
         });
         if(!wallet)
-            return Promise.reject(CustomAPIError.response('Add funds to wallet before initiating a delivery', HttpStatus.NOT_FOUND.code));
+            return Promise.reject(CustomAPIError.response('Wallet not found', HttpStatus.NOT_FOUND.code));
         
-        if(wallet.balance < _deliveryFee)
-            return Promise.reject(CustomAPIError.response('Wallet is low on cash, please fund wallet.', HttpStatus.BAD_REQUEST.code));
+        // if(wallet.balance < _deliveryFee)
+        //     return Promise.reject(CustomAPIError.response('Wallet is low on cash, please fund wallet.', HttpStatus.BAD_REQUEST.code));
 
         const deliveryValue: Partial<IDeliveryModel> = {
             ...value,
@@ -522,20 +528,64 @@ export default class DeliveryController {
 
         const delivery  = await datasources.deliveryDAOService.create(deliveryValue as IDeliveryModel);
 
-        if(delivery) {
-            const amount = wallet && wallet.balance - delivery.deliveryFee;
+        // if(delivery) {
+        //     const amount = wallet && wallet.balance - delivery.deliveryFee;
 
-            const walletBalance = {
-                balance: amount
-            };
+        //     const walletBalance = {
+        //         balance: amount
+        //     };
 
-            await datasources.walletDAOService.update(
-                { _id: wallet._id },
-                walletBalance
-            )
-        };
+        //     await datasources.walletDAOService.update(
+        //         { _id: wallet._id },
+        //         walletBalance
+        //     )
+        // };
 
         return delivery;
+    }
+
+    private async doPayForDelivery (req: Request) {
+
+        //@ts-ignore
+        const customerId = req.user._id;
+
+        const { error, value } = Joi.object<any>({
+            deliveryRefNumber: Joi.string().required().label('delivery reference number')
+        }).validate(req.body);
+        if(error) return Promise.reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
+
+        const wallet = await datasources.walletDAOService.findByAny({
+            customer: customerId
+        });
+
+        if(!wallet)
+            return Promise.reject(CustomAPIError.response('Please create wallet', HttpStatus.NOT_FOUND.code));
+
+        const delivery = await datasources.deliveryDAOService.findByAny({
+            deliveryRefNumber: value.deliveryRefNumber
+        })
+
+        if(!delivery)
+            return Promise.reject(CustomAPIError.response('Delivery not found', HttpStatus.NOT_FOUND.code));
+        
+        if(wallet.balance < delivery.deliveryFee)
+            return Promise.reject(
+                CustomAPIError.response(
+                    'Wallet is low on cash, please fund wallet.', HttpStatus.BAD_REQUEST.code)
+                );
+
+        const amount = wallet.balance - delivery.deliveryFee;
+
+        const walletBalance = {
+            balance: amount
+        };
+
+        const response = await datasources.walletDAOService.updateByAny(
+            { _id: wallet._id },
+            walletBalance
+        )
+
+        return response;
     }
 
     private async doEditDelivery (req: Request) {
@@ -555,9 +605,10 @@ export default class DeliveryController {
 
         const bike = await datasources.vehicleTypeDAOService.findByAny({vehicleType: 'bike'});
         const car = await datasources.vehicleTypeDAOService.findByAny({vehicleType: 'car'});
-        const bus = await datasources.vehicleTypeDAOService.findByAny({vehicleType: 'bus'});
+        const van = await datasources.vehicleTypeDAOService.findByAny({vehicleType: 'van'});
+        const truck = await datasources.vehicleTypeDAOService.findByAny({vehicleType: 'truck'});
 
-        if(!bike || !car || !bus)
+        if(!bike || !car || !van || !truck)
             return Promise.reject(CustomAPIError.response('Vehicle type not found', HttpStatus.NOT_FOUND.code))
         
         //checks speed and fee based on vehicle selected
@@ -569,12 +620,12 @@ export default class DeliveryController {
         } else if(value.vehicle === 'car') {
             speed += car.speed
             fee += car.costPerKm
-        } else if(value.vehicle === 'bus') {
-            speed += bus.speed
-            fee += bus.costPerKm
+        } else if(value.vehicle === 'van') {
+            speed += van.speed
+            fee += van.costPerKm
         } else {
-            speed += AVERAGE_SPEED
-            fee  += AVERAGE_PRICE_PER_KM
+            speed += truck.speed
+            fee += truck.costPerKm
         };
 
         const distance = Generic
@@ -593,7 +644,7 @@ export default class DeliveryController {
         });
 
         if(!wallet)
-            return Promise.reject(CustomAPIError.response('Add funds to wallet before initiating a delivery', HttpStatus.NOT_FOUND.code));
+            return Promise.reject(CustomAPIError.response('Wallet not found', HttpStatus.NOT_FOUND.code));
         
         let deliveryDiff: number = 0;
         if(_delivery.deliveryFee > _deliveryFee) {
@@ -628,18 +679,18 @@ export default class DeliveryController {
             deliveryValue
         );
 
-        if(delivery) {
-            const amount = wallet && wallet.balance + deliveryDiff;
+        // if(delivery) {
+        //     const amount = wallet && wallet.balance + deliveryDiff;
 
-            const walletBalance = {
-                balance: amount.toFixed(2)
-            };
+        //     const walletBalance = {
+        //         balance: amount?.toFixed(2)
+        //     };
 
-            await datasources.walletDAOService.update(
-                { _id: wallet._id },
-                walletBalance
-            )
-        };
+        //     await datasources.walletDAOService.update(
+        //         { _id: wallet?._id },
+        //         walletBalance
+        //     )
+        // };
 
         return delivery;
     }

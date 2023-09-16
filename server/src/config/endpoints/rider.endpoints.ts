@@ -15,6 +15,7 @@ import {
     getRiderRequestsHandler,
     getRidersHandler,
     getSingleRiderAddressHandler,
+    getSingleRiderLicenseHandler,
     getSingleRiderRequestHandler,
     isExpiredLicenseHandler,
     resetRiderPasswordHandler,
@@ -98,6 +99,12 @@ const riderEndpoints: RouteEndpoints = [
         method: 'get',
         path: '/rider/:riderId',
         handler: getRiderHandler
+    },
+    {
+        name: 'get single rider license',
+        method: 'get',
+        path: '/rider/license/:licenseId',
+        handler: getSingleRiderLicenseHandler
     },
     {
         name: 'save rider address',

@@ -38,7 +38,7 @@ export default class PackageController {
 
         const response: HttpResponse<IPackageModel> = {
             code: HttpStatus.OK.code,
-            message: '',
+            message: 'Package created successfully',
             result: _package
         };
         

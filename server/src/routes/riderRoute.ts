@@ -82,6 +82,12 @@ export const getSingleRiderAddressHandler = authenticateRouteWrapper(async (req,
     res.status(response.code).json(response);
 });
 
+export const getSingleRiderLicenseHandler = authenticateRouteWrapper(async (req, res) => {
+    const response = await riderController.getRiderLicense(req);
+
+    res.status(response.code).json(response);
+});
+
 export const updateRiderAddressHandler = authenticateRouteWrapper(async (req, res) => {
     const response = await riderController.updateAddress(req);
 

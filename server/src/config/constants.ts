@@ -49,12 +49,14 @@ import QueueEvents = appCommonTypes.QueueEvents;
 
   export const PRICE_PER_KM_BIKE = 150;
   export const PRICE_PER_KM_CAR = 200;
-  export const PRICE_PER_KM_BUS = 250;
+  export const PRICE_PER_KM_VAN = 250;
+  export const PRICE_PER_KM_TRUCK = 300;
   export const AVERAGE_PRICE_PER_KM = 250;
 
   export const BIKE_SPEED = 30;
   export const CAR_SPEED = 20;
-  export const BUS_SPEED = 10;
+  export const VAN_SPEED = 10;
+  export const TRUCK_SPEED = 5;
   export const AVERAGE_SPEED = 10;
 
   export const MAX_DISTANCE = 1000 //in km

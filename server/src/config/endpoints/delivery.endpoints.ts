@@ -10,7 +10,8 @@ import {
     getAllDeliveriesHandler,
     getDeliveriesHandler,
     getSingleDeliveryHandler,
-    packageReqHandler
+    packageReqHandler,
+    payForDeliveryHandler
 } from '../../routes/deliveryRoute';
 
 const deliveryEndpoints: RouteEndpoints = [
@@ -19,6 +20,12 @@ const deliveryEndpoints: RouteEndpoints = [
         method: 'post',
         path: '/delivery',
         handler: createDeliveryHandler
+    },
+    {
+        name: 'pay for delivery',
+        method: 'post',
+        path: '/make/delivery/payment',
+        handler: payForDeliveryHandler
     },
     {
         name: 'edit delivery',
