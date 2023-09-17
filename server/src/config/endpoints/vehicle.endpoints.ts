@@ -32,7 +32,7 @@ const vehicleEndpoints: RouteEndpoints = [
     {
         name: 'get single vehicle',
         method: 'get',
-        path: '/vehicle/:vehicleId',
+        path: '/vehicle/:riderId',
         handler: getSingleVehicleHandler
     },
     {
