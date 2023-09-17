@@ -103,7 +103,7 @@ const riderEndpoints: RouteEndpoints = [
     {
         name: 'get single rider license',
         method: 'get',
-        path: '/rider/license/:licenseId',
+        path: '/rider/license/:riderId',
         handler: getSingleRiderLicenseHandler
     },
     {

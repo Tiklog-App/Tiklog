@@ -144,9 +144,11 @@ export default class RiderController {
     @TryCatch
     @HasPermission([RIDER_PERMISSION, MANAGE_ALL])
     public async getRiderLicense(req: Request) {
-        const licenseId = req.params.licenseId;
+        const riderId = req.params.riderId;
 
-        const license = await datasources.riderLicenseDAOService.findById(licenseId);
+        const license = await datasources.riderLicenseDAOService.findByAny({
+            rider: riderId
+        });
         if(!license)
             return Promise.reject(CustomAPIError.response('License does not exist', HttpStatus.NOT_FOUND.code));
 
