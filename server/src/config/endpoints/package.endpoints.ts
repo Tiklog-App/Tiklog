@@ -1,6 +1,6 @@
 import { appCommonTypes } from '../../@types/app-common';
 import RouteEndpoints = appCommonTypes.RouteEndpoints;
-import { deletePackageHandler, savePackageHandler } from '../../routes/packageRoute';
+import { deletePackageHandler, fetchPackageHandler, savePackageHandler } from '../../routes/packageRoute';
 
 
 const packageEndpoints: RouteEndpoints = [
@@ -15,6 +15,12 @@ const packageEndpoints: RouteEndpoints = [
         method: 'delete',
         path: '/package/:packageId',
         handler: deletePackageHandler
+    },
+    {
+        name: 'fetch packages',
+        method: 'get',
+        path: '/packages',
+        handler: fetchPackageHandler
     }
 ];
 

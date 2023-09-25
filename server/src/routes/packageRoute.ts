@@ -1,3 +1,4 @@
+import { Request, Response } from "express";
 import PackageController from "../controller/PackageController";
 import authenticateRouteWrapper from "../middleware/authenticateRouteWrapper";
 
@@ -14,3 +15,9 @@ export const deletePackageHandler = authenticateRouteWrapper(async (req, res) =>
 
     res.status(response.code).json(response);
 });
+
+export const fetchPackageHandler = async (req: Request, res: Response) => {
+    const response = await packageController.fetchPackages(req);
+
+    res.status(response.code).json(response);
+};

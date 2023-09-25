@@ -46,6 +46,20 @@ export default class PackageController {
     };
 
     @TryCatch
+    public async fetchPackages(req: Request) {
+
+        const results = await datasources.packageDAOService.findAll({});
+
+        const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: HttpStatus.OK.value,
+            results
+        };
+      
+        return Promise.resolve(response);
+    }
+
+    @TryCatch
     @HasPermission([MANAGE_ALL, MANAGE_SOME, DELETE_PACKAGE])
     public async deletePackage(req: Request) {
         const packageId = req.params.packageId;
@@ -54,8 +68,7 @@ export default class PackageController {
 
         const response: HttpResponse<any> = {
             code: HttpStatus.OK.code,
-            message: HttpStatus.OK.value,
-            result: 'Successfully deleted',
+            message: 'Successfully deleted'
         };
       
         return Promise.resolve(response);
