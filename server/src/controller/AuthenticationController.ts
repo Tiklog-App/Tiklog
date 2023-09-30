@@ -16,6 +16,7 @@ import RedisService from "../services/RedisService";
 import { RIDER_STATUS_PENDING } from "../config/constants";
 import RabbitMqService from "../services/RabbitMqService";
 import { decode } from 'jsonwebtoken';
+import { IWalletModel } from "../models/Wallet";
 
 const redisService = new RedisService();
 const rabbitMqService = new RabbitMqService();
@@ -166,6 +167,12 @@ export default class AuthenticationController {
         };
 
         const customer = await datasources.customerDAOService.create(customerValues as ICustomerModel);
+        
+        //create wallet
+        const walletValue: Partial<IWalletModel> = {
+          customer: customer._id
+        }
+        await datasources.walletDAOService.create(walletValue as IWalletModel);
 
         role.users.push(customer._id);
         await role.save();

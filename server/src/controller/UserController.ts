@@ -392,6 +392,12 @@ export default class UserController {
                 }
             };
 
+            const role = await datasources.roleDAOService.findByAny({
+              name: value.role
+            });
+            if(!role)
+              return Promise.reject(CustomAPIError.response("Role not found", HttpStatus.NOT_FOUND.code));
+
             const profile_image = files.profileImageUrl as File;
             const basePath = `${UPLOAD_BASE_PATH}/user`;
 
@@ -419,6 +425,7 @@ export default class UserController {
             const userValues = {
                 ...value,
                 profileImageUrl: profile_image && _profileImageUrl,
+                role: role._id
             };
 
             const updatedUser = await datasources.userDAOService.updateByAny(

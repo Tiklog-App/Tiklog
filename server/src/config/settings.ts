@@ -60,6 +60,7 @@ export const MAKE_PAYMENT = 'make_payment';
 export const READ_RIDER_REQUEST = 'read_rider_request';
 
 export const LOGIN_FAILED_URL = `${process.env.CLIENT_URL}/login-failed`;
+export const ERROR_PAGE_URL = `${process.env.CLIENT_URL}/error`;
 
 export const HOME_URL =  `${process.env.CLIENT_URL}/home`;
 

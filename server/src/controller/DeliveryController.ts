@@ -559,7 +559,7 @@ export default class DeliveryController {
         });
 
         if(!wallet)
-            return Promise.reject(CustomAPIError.response('Please create wallet', HttpStatus.NOT_FOUND.code));
+            return Promise.reject(CustomAPIError.response('No wallet found', HttpStatus.NOT_FOUND.code));
 
         const delivery = await datasources.deliveryDAOService.findByAny({
             deliveryRefNumber: value.deliveryRefNumber

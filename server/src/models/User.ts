@@ -73,7 +73,8 @@ export const $updateUserSchema: Joi.SchemaMap = {
   email: Joi.string().label('email'),
   gender: Joi.string().label('gender'),
   phone: Joi.string().label('phone'),
-  profileImageUrl: Joi.string().label('profile image')
+  profileImageUrl: Joi.string().label('profile image'),
+  role: Joi.string().label('role'),
 };
 
 export const $loginSchema: Joi.SchemaMap = {

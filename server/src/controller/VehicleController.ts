@@ -70,7 +70,7 @@ export default class VehicleController {
     };
 
     @TryCatch
-    @HasPermission([RIDER_PERMISSION])
+    @HasPermission([RIDER_PERMISSION, MANAGE_ALL])
     public async getSingleVehicle(req: Request) {
 
         const riderId = req.params.riderId
