@@ -10,6 +10,7 @@ import {
     getTransactionsHandler,
     initTransactionCallbackHandler,
     makePaymentHandler,
+    mobileTransactionAddToWalletHandler,
     requestPaymentHandler,
     updateTransactionHandler
 } from '../../routes/TransactionRoute';
@@ -80,6 +81,12 @@ const transactionEndpoints: RouteEndpoints = [
         method: 'get',
         path: '/fetch-payment-requests',
         handler: fetchPaymentRequestHandler
+    },
+    {
+        name: 'mobile transaction add to wallet',
+        method: 'post',
+        path: '/transaction/add-to-wallet-mobile',
+        handler: mobileTransactionAddToWalletHandler
     }
 ];
 

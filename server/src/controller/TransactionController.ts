@@ -220,6 +220,88 @@ export default class TransactionController {
     };
 
     @TryCatch
+    public async mobileTransactionAddTowallet(req: Request) {
+        //@ts-ignore
+        const customerId = req.user._id
+
+        const { error, value } = Joi.object<any>({
+            amount: Joi.number().required().label('Amount'),
+            reference: Joi.string().required().label('Reference'),
+            status: Joi.boolean().required().label('status'),
+            channel: Joi.string().required().label('channel'),
+            last4: Joi.string().required().label('last 4 digit'),
+            expMonth: Joi.string().required().label('Expiration month'),
+            expYear: Joi.string().required().label('Expiration year'),
+            cardType: Joi.string().required().label('Card type'),
+        }).validate(req.body);
+        if (error) return Promise.reject(
+            CustomAPIError.response(
+                error.details[0].message, HttpStatus.BAD_REQUEST.code));
+
+        const customer = await datasources.customerDAOService.findById(customerId);
+        if(!customer)
+            return Promise.reject(CustomAPIError.response('Customer does not exist', HttpStatus.NOT_FOUND.code));
+
+
+        const $transaction = {
+            reference: value.reference,
+            channel: value.channel,
+            amount: value.amount,
+            status: value.status === true && 'success',
+            cardType: value.cardType,
+            last4: value.last4,
+            expMonth: value.expMonth,
+            expYear: value.expYear,
+            currency: "NGN",
+            paidAt: new Date(),
+            type: "Payment",
+            customer: customer._id
+        };
+
+        const transaction = await datasources.transactionDAOService.create($transaction as ITransactionModel);
+
+        const findWallet = await datasources.walletDAOService.findByAny({
+            customer: customer._id
+        });
+
+        // create wallet/update wallet
+        let _wallet;
+        if(!findWallet) {
+
+            const walletValue: Partial<IWalletModel> = {
+                balance: value.amount,
+                customer: customer._id
+            }
+
+            const wallet = await datasources.walletDAOService.create(walletValue as IWalletModel)
+
+            wallet.transactions.push(transaction._id);
+            _wallet = await wallet.save();
+        
+        } else {
+            const walletValue = {
+                balance: findWallet.balance + transaction.amount
+            }
+
+            const wallet = await datasources.walletDAOService.updateByAny(
+                {_id: findWallet._id},
+                walletValue
+            );
+
+            wallet?.transactions.push(transaction._id);
+            _wallet = await wallet?.save();
+        }
+
+        const response: HttpResponse<IWalletModel> = {
+            code: HttpStatus.OK.code,
+            message: "Transaction was successful",
+            result: _wallet,
+          };
+      
+        return Promise.resolve(response);
+    }
+
+    @TryCatch
     public async updateTransaction(req: Request) {
         const value = req.body;
 

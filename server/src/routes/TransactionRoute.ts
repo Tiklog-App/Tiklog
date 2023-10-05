@@ -69,3 +69,9 @@ export const fetchPaymentRequestHandler = authenticateRouteWrapper(async (req, r
 
     res.status(response.code).json(response);
 });
+
+export const mobileTransactionAddToWalletHandler = authenticateRouteWrapper(async (req, res) => {
+    const response = await transactionController.mobileTransactionAddTowallet(req);
+
+    res.status(response.code).json(response);
+});
