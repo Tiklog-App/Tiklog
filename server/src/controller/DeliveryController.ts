@@ -13,7 +13,8 @@ import {
     DELIVERED,
     ON_TRANSIT,
     CANCELED,
-    PACKAGE_REQUEST_INFO
+    PACKAGE_REQUEST_INFO,
+    PAID
 } from '../config/constants';
 import HttpResponse = appCommonTypes.HttpResponse;
 import { CUSTOMER_PERMISSION, DELETE_DELIVERY, MANAGE_ALL, MANAGE_SOME, READ_DELIVERY } from '../config/settings';
@@ -200,16 +201,19 @@ export default class DeliveryController {
 
         const delivery = await datasources.deliveryDAOService.findById(deliveryId);
         if(!delivery)
-            return Promise.reject(CustomAPIError.response('Delivery not found', HttpStatus.NOT_FOUND.code));
+            return Promise.reject(CustomAPIError.response('Delivery not found.', HttpStatus.NOT_FOUND.code));
 
         if(delivery.status === ON_TRANSIT)
-            return Promise.reject(CustomAPIError.response('Package already in transit, can not cancel delivery at this time', HttpStatus.BAD_REQUEST.code));
+            return Promise.reject(CustomAPIError.response('Package already in transit, can not cancel delivery at this time.', HttpStatus.BAD_REQUEST.code));
 
         if(delivery.status === DELIVERED)
-            return Promise.reject(CustomAPIError.response('Package has already been delivered, can not cancel delivery at this time', HttpStatus.BAD_REQUEST.code));
+            return Promise.reject(CustomAPIError.response('Package has already been delivered, can not cancel delivery at this time.', HttpStatus.BAD_REQUEST.code));
 
         if(delivery.status === CANCELED)
-            return Promise.reject(CustomAPIError.response('Can not cancel delivery at this time, already canceled', HttpStatus.BAD_REQUEST.code));
+            return Promise.reject(CustomAPIError.response('Can not cancel delivery at this time, already canceled.', HttpStatus.BAD_REQUEST.code));
+
+        if(delivery.status === PAID)
+            return Promise.reject(CustomAPIError.response('Cannot cancel delivery at this time; it has already been paid for.', HttpStatus.BAD_REQUEST.code));
 
         const wallet = await datasources.walletDAOService.findByAny({customer: delivery.customer});
         if(!wallet)
@@ -246,21 +250,35 @@ export default class DeliveryController {
         //@ts-ignore
         const customerId = req.user._id
 
-        const delivery = await datasources.deliveryDAOService.findAll(
+        const { error, value } = Joi.object<any>({
+            deliveryRef: Joi.string().required().label("Delivery reference")
+        }).validate(req.body);
+        if(error) return Promise.reject(
+            CustomAPIError.response(
+                error.details[0].message, HttpStatus.BAD_REQUEST.code));
+
+
+        const deliveries = await datasources.deliveryDAOService.findAll(
             {customer: customerId}
         );
-        if(!delivery)
-            return Promise.reject(CustomAPIError.response('Delivery does not exist', HttpStatus.NOT_FOUND.code));
+        if(!deliveries)
+            return Promise.reject(CustomAPIError.response('No delivery found', HttpStatus.NOT_FOUND.code));
         
-        const lastDelivery = delivery[delivery.length - 1];
+        const delivery = deliveries.find(delivery => delivery.deliveryRefNumber === value.deliveryRef);
+        if(!delivery)
+            return Promise.reject(
+                CustomAPIError
+                .response('The reference provided does not match any delivery.', 
+                HttpStatus.NOT_FOUND.code));
+        
 
-        if(lastDelivery.status === CANCELED || lastDelivery.status === DELIVERED)
+        if(delivery.status === CANCELED || delivery.status === DELIVERED)
             return Promise.reject(CustomAPIError.response('No pending delivery, please fill out a new delivery', HttpStatus.NOT_FOUND.code));
 
-        const customerLongitude = lastDelivery.senderLocation.coordinates[0];
-        const customerLatitude = lastDelivery.senderLocation.coordinates[1];
-        const deliveryRefNumber = lastDelivery.deliveryRefNumber;
-        const estimatedDeliveryTime = lastDelivery.estimatedDeliveryTime;
+        const customerLongitude = delivery.senderLocation.coordinates[0];
+        const customerLatitude = delivery.senderLocation.coordinates[1];
+        const deliveryRefNumber = delivery.deliveryRefNumber;
+        const estimatedDeliveryTime = delivery.estimatedDeliveryTime;
 
         const riderLocations = await RiderLocation.aggregate([
             {
@@ -305,7 +323,7 @@ export default class DeliveryController {
             if (isValidRider) {
               const riderVehicle = await datasources.vehicleDAOService.findByAny({rider: _rider._id});
 
-              if (riderVehicle && riderVehicle.vehicleType === lastDelivery.vehicle) {
+              if (riderVehicle && riderVehicle.vehicleType === delivery.vehicle) {
                 rider = _rider;
                 break;
               }
@@ -379,15 +397,15 @@ export default class DeliveryController {
 
         const packageRequestData = {
             customerId: customerId,
-            recipientAddress: lastDelivery.recipientAddress,
-            senderAddress: lastDelivery.senderAddress,
+            recipientAddress: delivery.recipientAddress,
+            senderAddress: delivery.senderAddress,
             riderId: rider._id,
             riderFirstName: rider.firstName,
-            senderName: lastDelivery.senderName,
+            senderName: delivery.senderName,
             arrivalTime: `Rider will arrive in ${arrivalTime}min`,
             deliveryRefNumber: deliveryRefNumber,
             estimatedDeliveryTime: estimatedDeliveryTime,
-            deliveryId: lastDelivery._id
+            deliveryId: delivery._id
         }
 
         const redisData = JSON.stringify(packageRequestData)
@@ -580,10 +598,15 @@ export default class DeliveryController {
             balance: amount
         };
 
+        await datasources.deliveryDAOService.update(
+            {_id: delivery._id},
+            { status: PAID }
+        );
+
         const response = await datasources.walletDAOService.updateByAny(
             { _id: wallet._id },
             walletBalance
-        )
+        );
 
         return response;
     }

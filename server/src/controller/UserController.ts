@@ -136,12 +136,21 @@ export default class UserController {
     const userId = req.params.userId;
     
     const user = await datasources.userDAOService.findById(userId);
-    if(!user) return Promise.reject(CustomAPIError.response(`User with Id: ${userId} does not exist`, HttpStatus.BAD_REQUEST.code));
+    if(!user) return Promise.reject(
+      CustomAPIError.response(`User with Id: ${userId} does not exist`,
+      HttpStatus.BAD_REQUEST.code));
 
-    const response: HttpResponse<IUserModel> = {
+    const role = await datasources.roleDAOService.findById(user.roles[0]);
+
+    const result = {
+      user,
+      roleName: role?.name
+    };
+
+    const response: HttpResponse<any> = {
         code: HttpStatus.OK.code,
         message: HttpStatus.OK.value,
-        result: user,
+        result
     };
   
     return Promise.resolve(response);
@@ -181,149 +190,149 @@ export default class UserController {
     return Promise.resolve(response);
   };
 
-      /**
-     * @name resetPassword
-     * @param req
-     * @desc
-     * Sends password reset link to user email
-     * and also cached the reset token, email and
-     * user id
-     * to redis for 1 hour
-     * 
-     */
-      public async resetPassword (req: Request) {
-        try {
-            const { error, value } = Joi.object<IUserModel>($resetPassword).validate(req.body);
-            if(error) return Promise.reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
-            
-            const user = await datasources.userDAOService.findByAny({
-                email: value.email
-            });
-            if(!user) return Promise.reject(CustomAPIError.response('User not found', HttpStatus.BAD_REQUEST.code));
-            
-            const token = Generic.generatePasswordResetCode(4);
-            
-            const data = {
-              token: token
-            };
-            const actualData = JSON.stringify(data);
-
-            redisService.saveToken(`tikLog_app_${value.email}`, actualData, 3600);
-
-            
-
-            await datasources.userDAOService.update(
-                {_id: user._id},
-                {passwordResetCode: token}
-            )
-
-            sendMailService.sendMail({
-                from: settings.nodemailer.email,
-                to: value.email,
-                subject: 'Password Reset',
-                text: `Your password reset code is: ${token}`,
-            });
-
-            const response: HttpResponse<any> = {
-                code: HttpStatus.OK.code,
-                message: `If your email is registered with us, you will receive a password reset code.`
-            };
-        
-            return Promise.resolve(response);
-        
-        } catch (error) {
-            console.error(error, 'token error when setting');
-            Promise.reject(CustomAPIError.response('Failed to send the password reset token. Please try again later.', HttpStatus.BAD_REQUEST.code));
-        }
-        
-    };
-
-    @TryCatch
-    public async enterPasswordResetCode (req: Request) {
-
-        const { email, passwordResetCode } = req.body;
-
-        const customer = await datasources.customerDAOService.findByAny({
-            email: email
-        });
-
-        if(!customer)
-            return Promise.reject(CustomAPIError.response('Customer not found', HttpStatus.BAD_REQUEST.code));
-
-        if(customer.passwordResetCode !== passwordResetCode)
-            return Promise.reject(CustomAPIError.response('Password reset code do not match', HttpStatus.BAD_REQUEST.code));
-
-
-        const response: HttpResponse<any> = {
-            code: HttpStatus.OK.code,
-            message: HttpStatus.OK.value
-        };
-
-        return Promise.resolve(response);
-
-    }
-
     /**
-     * @name savePassword
-     * @param req
-     * @desc
-     * checks if data exist with the provided key in redis
-     * fetch the token in redis and compare with  
-     * the token user id and the req.params if true it
-     * Saves the new password for the user
-     * else it returns an error
-     */
-    // @TryCatch
-    public async savePassword (req: Request) {
-        try {
+   * @name resetPassword
+   * @param req
+   * @desc
+   * Sends password reset link to user email
+   * and also cached the reset token, email and
+   * user id
+   * to redis for 1 hour
+   * 
+   */
+    public async resetPassword (req: Request) {
+      try {
+          const { error, value } = Joi.object<IUserModel>($resetPassword).validate(req.body);
+          if(error) return Promise.reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
+          
+          const user = await datasources.userDAOService.findByAny({
+              email: value.email
+          });
+          if(!user) return Promise.reject(CustomAPIError.response('User not found', HttpStatus.BAD_REQUEST.code));
+          
+          const token = Generic.generatePasswordResetCode(4);
+          
+          const data = {
+            token: token
+          };
+          const actualData = JSON.stringify(data);
 
-            const { error, value } = Joi.object<IUserModel>($savePasswordAfterReset).validate(req.body);
-            if(error) return Promise.reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
-        
-            const user = await datasources.userDAOService.findByAny({
-                email: value.email
-            });
-            if(!user)
-                return Promise.reject(CustomAPIError.response('User not found', HttpStatus.BAD_REQUEST.code));
-            
-            const keys = `tikLog_app_${value.email}`;
-            const redisData = await redisService.getToken(keys);
+          redisService.saveToken(`tikLog_app_${value.email}`, actualData, 3600);
 
-            if (redisData) {
-                const { token }: any = redisData;
-                
-                if(token !== user.passwordResetCode)
-                    return Promise.reject(CustomAPIError.response('Failed to save password, please try resetting password again', HttpStatus.BAD_REQUEST.code));
-            
-                const password = await this.passwordEncoder.encode(value.password as string);
-                const userValues = {
-                    password: password,
-                    confirm_password: password
-                };
-                
-                await datasources.userDAOService.update(
-                    { _id: user._id },
-                    userValues
-                );
+          
 
-                const response: HttpResponse<any> = {
-                    code: HttpStatus.OK.code,
-                    message: 'Password reset successfully.',
-                };
+          await datasources.userDAOService.update(
+              {_id: user._id},
+              {passwordResetCode: token}
+          )
 
-                redisService.deleteRedisKey(keys)
-                return Promise.resolve(response);
+          sendMailService.sendMail({
+              from: settings.nodemailer.email,
+              to: value.email,
+              subject: 'Password Reset',
+              text: `Your password reset code is: ${token}`,
+          });
 
-            } else {
-                // Token not found in Redis
-                return Promise.reject(CustomAPIError.response('Token has expired', HttpStatus.BAD_REQUEST.code))
-            }
-            
-        } catch (error) {
-            console.error(error, 'token error when getting');
-            return Promise.reject(CustomAPIError.response('Failed to retrieve token please try again later', HttpStatus.BAD_REQUEST.code))
-        }
-    }
+          const response: HttpResponse<any> = {
+              code: HttpStatus.OK.code,
+              message: `If your email is registered with us, you will receive a password reset code.`
+          };
+      
+          return Promise.resolve(response);
+      
+      } catch (error) {
+          console.error(error, 'token error when setting');
+          Promise.reject(CustomAPIError.response('Failed to send the password reset token. Please try again later.', HttpStatus.BAD_REQUEST.code));
+      }
+      
+  };
+
+  @TryCatch
+  public async enterPasswordResetCode (req: Request) {
+
+      const { email, passwordResetCode } = req.body;
+
+      const customer = await datasources.customerDAOService.findByAny({
+          email: email
+      });
+
+      if(!customer)
+          return Promise.reject(CustomAPIError.response('Customer not found', HttpStatus.BAD_REQUEST.code));
+
+      if(customer.passwordResetCode !== passwordResetCode)
+          return Promise.reject(CustomAPIError.response('Password reset code do not match', HttpStatus.BAD_REQUEST.code));
+
+
+      const response: HttpResponse<any> = {
+          code: HttpStatus.OK.code,
+          message: HttpStatus.OK.value
+      };
+
+      return Promise.resolve(response);
+
+  }
+
+  /**
+   * @name savePassword
+   * @param req
+   * @desc
+   * checks if data exist with the provided key in redis
+   * fetch the token in redis and compare with  
+   * the token user id and the req.params if true it
+   * Saves the new password for the user
+   * else it returns an error
+   */
+  // @TryCatch
+  public async savePassword (req: Request) {
+      try {
+
+          const { error, value } = Joi.object<IUserModel>($savePasswordAfterReset).validate(req.body);
+          if(error) return Promise.reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
+      
+          const user = await datasources.userDAOService.findByAny({
+              email: value.email
+          });
+          if(!user)
+              return Promise.reject(CustomAPIError.response('User not found', HttpStatus.BAD_REQUEST.code));
+          
+          const keys = `tikLog_app_${value.email}`;
+          const redisData = await redisService.getToken(keys);
+
+          if (redisData) {
+              const { token }: any = redisData;
+              
+              if(token !== user.passwordResetCode)
+                  return Promise.reject(CustomAPIError.response('Failed to save password, please try resetting password again', HttpStatus.BAD_REQUEST.code));
+          
+              const password = await this.passwordEncoder.encode(value.password as string);
+              const userValues = {
+                  password: password,
+                  confirm_password: password
+              };
+              
+              await datasources.userDAOService.update(
+                  { _id: user._id },
+                  userValues
+              );
+
+              const response: HttpResponse<any> = {
+                  code: HttpStatus.OK.code,
+                  message: 'Password reset successfully.',
+              };
+
+              redisService.deleteRedisKey(keys)
+              return Promise.resolve(response);
+
+          } else {
+              // Token not found in Redis
+              return Promise.reject(CustomAPIError.response('Token has expired', HttpStatus.BAD_REQUEST.code))
+          }
+          
+      } catch (error) {
+          console.error(error, 'token error when getting');
+          return Promise.reject(CustomAPIError.response('Failed to retrieve token please try again later', HttpStatus.BAD_REQUEST.code))
+      }
+  }
 
   private async doCreateUser(req: Request){
     const { error, value } = Joi.object<IUserModel>($saveUserSchema).validate(req.body);

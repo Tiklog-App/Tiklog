@@ -38,10 +38,12 @@ import QueueEvents = appCommonTypes.QueueEvents;
   export const UPLOAD_BASE_PATH = 'uploads';
   export const HOME_ADDRESS = 'HOME';
   export const OFFICE_ADDRESS = 'OFFICE';
+
   export const PENDING = 'pending';
   export const ON_TRANSIT = 'on_transit';
   export const DELIVERED = 'delivered';
   export const CANCELED = 'canceled';
+  export const PAID = 'paid';
 
   export const RIDER_STATUS_PENDING = 'pending';
   export const RIDER_STATUS_ONLINE = 'online';

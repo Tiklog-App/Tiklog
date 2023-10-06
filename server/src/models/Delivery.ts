@@ -24,7 +24,7 @@ interface IDelivery {
   deliveryTime: Date,
   pickupTime: Date,
   item: string,
-  estimateValue: string,
+  estimatedValue: string,
   rating: number | null,
   deliveryFee: number,
   riderName: string,
@@ -33,6 +33,7 @@ interface IDelivery {
   customer: mongoose.Types.ObjectId,
   estimatedDeliveryTime: string,
   deliveryRefNumber: string
+  createdAt: Date
 };
 
 const deliverySchema = new Schema<IDelivery>({
@@ -72,7 +73,7 @@ const deliverySchema = new Schema<IDelivery>({
   deliveryTime: { type: Date },
   pickupTime: { type: Date },
   item: { type: String },
-  estimateValue: { type: String },
+  estimatedValue: { type: String },
   rating: { type: Number, allowNull: true },
   deliveryFee: { type: Number },
   riderName: { type: String },
@@ -80,7 +81,8 @@ const deliverySchema = new Schema<IDelivery>({
   rider: { type: Schema.Types.ObjectId, ref: 'Rider', allowNull: true },
   customer: { type: Schema.Types.ObjectId, ref: 'Customer' },
   estimatedDeliveryTime: { type: String },
-  deliveryRefNumber: { type: String }
+  deliveryRefNumber: { type: String },
+  createdAt: { type: Date, default: new Date() }
 });
 
 deliverySchema.index({ senderLocation: '2dsphere' });
@@ -106,7 +108,7 @@ export const $deliverySchema: Joi.SchemaMap = {
   vehicle: Joi.string().required().label('Vehicle'),
   packageOtherDetails: Joi.string().label('Package Detail'),
   item: Joi.string().required().label('Item'),
-  itemEstimateValue: Joi.number().required().label('Item Estimate Value'),
+  estimatedValue: Joi.number().required().label('Item Estimated Value'),
   rating: Joi.number().allow(null).label('Rating')
 };
 
@@ -126,7 +128,7 @@ export const $editDeliverySchema: Joi.SchemaMap = {
   vehicle: Joi.string().label('Vehicle'),
   packageOtherDetails: Joi.string().label('Package Detail'),
   item: Joi.string().label('Item'),
-  itemEstimateValue: Joi.number().label('Item Estimate Value'),
+  estimatedValue: Joi.number().label('Item Estimated Value'),
   rating: Joi.number().allow(null).label('Rating')
 };
 
