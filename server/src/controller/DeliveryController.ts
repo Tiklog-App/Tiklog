@@ -584,8 +584,20 @@ export default class DeliveryController {
         })
 
         if(!delivery)
-            return Promise.reject(CustomAPIError.response('Delivery not found', HttpStatus.NOT_FOUND.code));
+            return Promise.reject(CustomAPIError.response('Delivery not found.', HttpStatus.NOT_FOUND.code));
         
+        if(delivery.status === PAID)
+            return Promise.reject(CustomAPIError.response('Delivery already paid for.', HttpStatus.NOT_FOUND.code));
+
+        if(delivery.status === DELIVERED)
+            return Promise.reject(CustomAPIError.response('Delivery has already been delivered.', HttpStatus.NOT_FOUND.code));
+
+        if(delivery.status === CANCELED)
+            return Promise.reject(CustomAPIError.response('Delivery has already been canceled.', HttpStatus.NOT_FOUND.code));
+
+        if(delivery.status === ON_TRANSIT)
+            return Promise.reject(CustomAPIError.response('Delivery is on transit.', HttpStatus.NOT_FOUND.code));
+
         if(wallet.balance < delivery.deliveryFee)
             return Promise.reject(
                 CustomAPIError.response(
