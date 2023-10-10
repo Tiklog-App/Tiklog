@@ -97,7 +97,7 @@ export const $deliverySchema: Joi.SchemaMap = {
   senderAddress: Joi.string().required().label('Sender Address'),
   senderLon: Joi.number().required().label('Sender Longitude'),
   senderLat: Joi.number().required().label('Sender Latitude'),
-  senderPhone: Joi.string().required().label('Sender Phone'),
+  // senderPhone: Joi.string().required().label('Sender Phone'),
   recipientName: Joi.string().required().label('Recipient Name'),
   recipientAddress: Joi.string().optional().allow('').label('Recipient Address'),
   recipientLon: Joi.number().required().label('Recipient Longitude'),

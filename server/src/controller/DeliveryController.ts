@@ -482,6 +482,13 @@ export default class DeliveryController {
         const { error, value } = Joi.object<any>($deliverySchema).validate(req.body);
         if(error) return Promise.reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
 
+        const customer = await datasources.customerDAOService.findById(customerId);
+        if(customer && customer.level < 3) {
+            return Promise.reject(
+                CustomAPIError.response('Please complete your personal information and provide your address details before initiating a delivery.', 
+                HttpStatus.NOT_FOUND.code));
+        }
+
         const bike = await datasources.vehicleTypeDAOService.findByAny({vehicleType: 'bike'});
         const car = await datasources.vehicleTypeDAOService.findByAny({vehicleType: 'car'});
         const van = await datasources.vehicleTypeDAOService.findByAny({vehicleType: 'van'});
