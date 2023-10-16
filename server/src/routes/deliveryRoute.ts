@@ -35,6 +35,12 @@ export const getDeliveriesHandler = authenticateRouteWrapper( async (req, res) =
     res.status(response.code).json(response);
 });
 
+export const getAllCustomerDeliveriesHandler = authenticateRouteWrapper( async (req, res) =>  {
+    const response = await deliveryController.getAllDeliveries(req);
+
+    res.status(response.code).json(response);
+});
+
 export const getAllDeliveriesHandler = authenticateRouteWrapper( async (req, res) =>  {
     const response = await deliveryController.getDeliveriesAll(req);
 

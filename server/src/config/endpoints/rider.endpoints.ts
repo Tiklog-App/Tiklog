@@ -205,7 +205,7 @@ const riderEndpoints: RouteEndpoints = [
     {
         name: 'get rider requests',
         method: 'get',
-        path: '/rider-requests',
+        path: '/rider-requests/:riderId',
         handler: getRiderRequestsHandler
     },
     {

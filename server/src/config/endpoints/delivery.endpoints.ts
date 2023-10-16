@@ -7,6 +7,7 @@ import {
     driverResHandler,
     editDeliveryHandler,
     findRidersHandler,
+    getAllCustomerDeliveriesHandler,
     getAllDeliveriesHandler,
     getDeliveriesHandler,
     getSingleDeliveryHandler,
@@ -50,6 +51,12 @@ const deliveryEndpoints: RouteEndpoints = [
         method: 'get',
         path: '/deliveries',
         handler: getAllDeliveriesHandler
+    },
+    {
+        name: 'get all customer deliveries',
+        method: 'get',
+        path: '/customer/deliveries/:customerId',
+        handler: getAllCustomerDeliveriesHandler
     },
     {
         name: 'delete delivery',

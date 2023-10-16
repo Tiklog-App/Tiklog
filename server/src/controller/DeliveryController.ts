@@ -142,6 +142,26 @@ export default class DeliveryController {
         return Promise.resolve(response);
     };
 
+    @TryCatch
+    @HasPermission([READ_DELIVERY, MANAGE_ALL, MANAGE_SOME])
+    public async getAllDeliveries(req: Request) {
+
+        //@ts-ignore
+        const customerId = req.params.customerId;
+
+        const deliveries = await datasources.deliveryDAOService.findAll({
+            customer: customerId
+        });
+
+        const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: HttpStatus.OK.value,
+            results: deliveries,
+        };
+      
+        return Promise.resolve(response);
+    };
+
     /**
      * 
      * @returns all the deliveries in the database

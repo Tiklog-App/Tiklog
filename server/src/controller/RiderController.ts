@@ -1183,19 +1183,20 @@ export default class RiderController {
     @TryCatch
     @HasPermission([MANAGE_ALL, RIDER_PERMISSION, READ_RIDER_REQUEST])
     public async getRequests(req: Request) {
-        const { error, value } = Joi.object<any>(
-            riderRequestSchema
-          ).validate(req.body);
+        // const { error, value } = Joi.object<any>(
+        //     riderRequestSchema
+        //   ).validate(req.body);
       
-          if (error)
-            return Promise.reject(
-              CustomAPIError.response(
-                error.details[0].message,
-                HttpStatus.BAD_REQUEST.code
-              )
-            );
+        //   if (error)
+        //     return Promise.reject(
+        //       CustomAPIError.response(
+        //         error.details[0].message,
+        //         HttpStatus.BAD_REQUEST.code
+        //       )
+        //     );
+        const riderId = req.params.riderId
 
-        const rider = await datasources.riderDAOService.findById(value.riderId);
+        const rider = await datasources.riderDAOService.findById(riderId);
 
         if(!rider)
             return Promise.reject(CustomAPIError.response('Rider does not exist', HttpStatus.BAD_REQUEST.code));

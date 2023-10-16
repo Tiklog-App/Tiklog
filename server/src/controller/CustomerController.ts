@@ -27,6 +27,7 @@ import SendMailService from "../services/SendMailService";
 import Generic from "../utils/Generic";
 import formidable, { File } from 'formidable';
 import { $saveCustomerAddress, $updateCustomerAddress, ICustomerAddressModel } from "../models/CustomerAddress";
+import moment = require("moment");
 
 const redisService = new RedisService();
 const sendMailService = new SendMailService();
@@ -581,12 +582,15 @@ export default class CustomerController {
                     });
                 };
 
+                const date = moment(value.dob, 'DD-MM-YYYY', true);
+
                 const customerValues = {
                     ...value,
                     email: _email ? _email : customer.email,
                     profileImageUrl: profile_image && _profileImageUrl,
                     phone: _phone ? _phone : customer.phone,
-                    level: 2
+                    level: 2,
+                    dob: date.isValid() ? value.dob : moment(date)
                 };
 
                 const updatedCustomer = await datasources.customerDAOService.updateByAny(
