@@ -315,7 +315,7 @@ export default class VehicleController {
     };
 
     @TryCatch
-    @HasPermission([MANAGE_ALL, READ_VEHICLE_TYPE, RIDER_PERMISSION])
+    // @HasPermission([MANAGE_ALL, READ_VEHICLE_TYPE, RIDER_PERMISSION])
     public async getVehicleType(req: Request) {
 
         const vehicleTypes = await datasources.vehicleTypeDAOService.findAll({});
