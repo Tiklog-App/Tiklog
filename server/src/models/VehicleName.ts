@@ -20,13 +20,13 @@ const VehicleName = mongoose.model<IVehicleNameModel>('VehicleName', vehicleName
 export const $saveVehicleNameSchema: Joi.SchemaMap<IVehicleNameModel> = {
     vehicleName: Joi.string().required().label('Vehicle name'),
     slug: Joi.string().optional().label('slug'),
-    vehicleModel: Joi.array().required().label('permit')
+    vehicleModel: Joi.array().required().label('vehicle model')
 };
 
 export const $updateVehicleNameSchema: Joi.SchemaMap<IVehicleNameModel> = {
     vehicleName: Joi.string().label('Vehicle name'),
     slug: Joi.string().optional().label('slug'),
-    vehicleModel: Joi.array().label('permit')
+    vehicleModel: Joi.array().label('vehicle model')
 };
 
 export default VehicleName

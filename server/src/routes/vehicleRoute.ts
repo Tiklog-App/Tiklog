@@ -52,11 +52,11 @@ export const updateVehicleNameHandler = authenticateRouteWrapper( async (req, re
     res.status(response.code).json(response);
 });
 
-export const getVehicleNameHandler = authenticateRouteWrapper( async (req, res) =>  {
+export const getVehicleNameHandler = async (req: Request, res: Response) =>  {
     const response = await vehicleController.getVehicleName(req);
 
     res.status(response.code).json(response);
-});
+};
 
 export const newVehicleTypeHandler = authenticateRouteWrapper( async (req, res) =>  {
     const response = await vehicleController.newVehicleType(req);
@@ -76,8 +76,8 @@ export const deleteVehicleTypeHandler = authenticateRouteWrapper( async (req, re
     res.status(response.code).json(response);
 });
 
-export const getVehicleTypeHandler = authenticateRouteWrapper( async (req, res) =>  {
+export const getVehicleTypeHandler = async (req: Request, res: Response) =>  {
     const response = await vehicleController.getVehicleType(req);
 
     res.status(response.code).json(response);
-});
+};
