@@ -35,8 +35,8 @@ const RiderLicense = mongoose.model<IRiderLicenseModel>('RiderLicense', riderLic
 
 export const $licenseSchema: Joi.SchemaMap<IRiderLicenseModel> = {
     licenseNumber: Joi.string().required().label('license number'),
-    issuedDate: Joi.date().required().label('issued date'),
-    expiryDate: Joi.date().required().label('expiry date')
+    issuedDate: Joi.string().required().label('issued date'),
+    expiryDate: Joi.string().required().label('expiry date')
 };
 
 export default RiderLicense;

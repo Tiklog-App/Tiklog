@@ -582,15 +582,13 @@ export default class CustomerController {
                     });
                 };
 
-                const date = moment(value.dob, 'DD-MM-YYYY', true);
-
                 const customerValues = {
                     ...value,
                     email: _email ? _email : customer.email,
                     profileImageUrl: profile_image && _profileImageUrl,
                     phone: _phone ? _phone : customer.phone,
                     level: 2,
-                    dob: date.isValid() ? value.dob : moment(date)
+                    dob: new Date(value.dob)
                 };
 
                 const updatedCustomer = await datasources.customerDAOService.updateByAny(

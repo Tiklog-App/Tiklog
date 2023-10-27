@@ -19,6 +19,7 @@ import { $bankDetailRider, $changePassword, $editRiderProfileSchema, $resetPassw
 import { $saveRiderAddress, $updateRiderAddress, IRiderAddressModel } from "../models/RiderAddress";
 import { IRiderLocationModel } from "../models/RiderLocation";
 import { $licenseSchema, IRiderLicenseModel } from "../models/RiderLicense";
+import moment = require("moment");
 
 const redisService = new RedisService();
 const sendMailService = new SendMailService();
@@ -817,6 +818,7 @@ export default class RiderController {
                 
                 const issuedDate = new Date(value.issuedDate);
                 const expiryDate = new Date(value.expiryDate);
+
                 if(issuedDate > expiryDate)
                     return reject(CustomAPIError.response('License issued date can not be greater than expiry date', HttpStatus.BAD_REQUEST.code));
 
@@ -858,6 +860,8 @@ export default class RiderController {
 
                 const licenseValues: Partial<IRiderLicenseModel> = {
                     ...value,
+                    issuedDate,
+                    expiryDate,
                     licenseImageUrl: license_image && licenseImageUrl,
                     slug: _licenseNumber,
                     rider: riderId,
