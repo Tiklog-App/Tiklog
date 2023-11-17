@@ -84,7 +84,7 @@ const deliveryEndpoints: RouteEndpoints = [
     },
     {
         name: 'find riders',
-        method: 'get',
+        method: 'post',
         path: '/find-riders',
         handler: findRidersHandler
     }

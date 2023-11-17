@@ -19,7 +19,6 @@ import { $bankDetailRider, $changePassword, $editRiderProfileSchema, $resetPassw
 import { $saveRiderAddress, $updateRiderAddress, IRiderAddressModel } from "../models/RiderAddress";
 import { IRiderLocationModel } from "../models/RiderLocation";
 import { $licenseSchema, IRiderLicenseModel } from "../models/RiderLicense";
-import moment = require("moment");
 
 const redisService = new RedisService();
 const sendMailService = new SendMailService();
@@ -777,7 +776,7 @@ export default class RiderController {
         if (rider.status === RIDER_STATUS_ONLINE) {
             newStatus = RIDER_STATUS_OFFLINE;
         } else {
-            if(!riderLicense.isExpired)
+            if(riderLicense.isExpired)
                 return Promise.reject(CustomAPIError.response('Your vehicle license has expired please renew license', HttpStatus.BAD_REQUEST.code));
             
             newStatus = RIDER_STATUS_ONLINE;

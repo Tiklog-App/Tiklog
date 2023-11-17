@@ -100,7 +100,7 @@ export default class Generic {
     const timeInHours = distance / speed;
     const hours = Math.floor(timeInHours);
     const minutes = Math.round((timeInHours - hours) * 60);
-    console.log(typeof hours, typeof minutes, 'checkws')
+
     const dateTime = new Date();
     dateTime.setHours(dateTime.getHours() + hours);
     dateTime.setMinutes(dateTime.getMinutes() + minutes);

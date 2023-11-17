@@ -21,11 +21,11 @@ async function startRabbitMqService() {
   rabbitMqService.setupSocketIO(server);
 }
 
-// const io = new SocketServer(server);
+// const io = new Server(server);
 
-// // io.on('connection', socket => {
-// //   logger.info(socket.id);
-// // });
+// io.on('connection', socket => {
+//   logger.info(socket.id);
+// });
 
 startup().catch(console.error);
 

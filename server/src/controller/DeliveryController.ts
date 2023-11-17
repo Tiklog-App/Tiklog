@@ -290,7 +290,6 @@ export default class DeliveryController {
                 CustomAPIError
                 .response('The reference provided does not match any delivery.', 
                 HttpStatus.NOT_FOUND.code));
-        
 
         if(delivery.status === CANCELED || delivery.status === DELIVERED)
             return Promise.reject(CustomAPIError.response('No pending delivery, please fill out a new delivery', HttpStatus.NOT_FOUND.code));
@@ -322,7 +321,7 @@ export default class DeliveryController {
 
         const riderIds = riderLocations.map((riderLocation) => riderLocation.rider);
         const riders = await datasources.riderDAOService.findAll({ _id: { $in: riderIds } });
-        
+
         /*** Logic to find rider that meets these criteria
          * 1. online
          * 2. active
@@ -334,7 +333,7 @@ export default class DeliveryController {
             
             const _rider = await datasources.riderDAOService.findById(riderLoc._id);
             const _rider_license = await datasources.riderLicenseDAOService.findByAny({ rider: riderLoc._id });
-          
+
             const isValidRider =
               _rider?.status === 'online' &&
               _rider?.active &&

@@ -329,7 +329,7 @@ class RabbitMqService {
     });
 
     this.io.on('connection', (socket: Socket<any, any, any, any>) => {
-      console.log('Client connected.');
+      console.log(`Client connected. ${socket.id}`);
       logger.info(socket.id);
 
       socket.on('packageRequest', (request: any) => {
