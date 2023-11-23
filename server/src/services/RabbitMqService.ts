@@ -292,12 +292,14 @@ class RabbitMqService {
           { _id: riderId },
           { busy: false }
         )
+        
         const riderWallet = await datasources.riderWalletDAOService.findByAny({ rider: riderId });
         const adminFee = delivery && ADMIN_CHARGES/100 * delivery.deliveryFee;
         const riderFee = delivery && delivery.deliveryFee - Math.round(adminFee as number) as number;
+
         if(riderWallet) {
           await datasources.riderWalletDAOService.update(
-            { _id: riderId },
+            { _id: riderWallet._id },
             { balance: riderFee && riderFee + riderWallet.balance }
           )
         } else {

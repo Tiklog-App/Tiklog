@@ -428,7 +428,7 @@ export default class DeliveryController {
         }
 
         const redisData = JSON.stringify(packageRequestData)
-        redisService.saveToken(PACKAGE_REQUEST_INFO, redisData, 3600)
+        redisService.saveToken(PACKAGE_REQUEST_INFO, redisData)
 
         const response: HttpResponse<any> = {
             code: HttpStatus.OK.code,
@@ -465,7 +465,12 @@ export default class DeliveryController {
     public async sendDriverResponse(req: Request) {
         await rabbitMqService.connectToRabbitMQ();
 
-        // const { availability } = req.body;
+        const { error, value } = Joi.object<any>({
+            availability: Joi.boolean().required().label("Delivery availability")
+        }).validate(req.body);
+        if(error) return Promise.reject(
+            CustomAPIError.response(
+                error.details[0].message, HttpStatus.BAD_REQUEST.code));
 
         const customerDetail: any = await redisService.getToken(PACKAGE_REQUEST_INFO);
 
@@ -475,7 +480,7 @@ export default class DeliveryController {
         const riderResponse = {
             customerId: customerDetail.customerId,
             riderId: customerDetail.riderId,
-            availability: true, //availability
+            availability: value.availability,
             arrivalTime: customerDetail.arrivalTime
         };
 

@@ -78,7 +78,7 @@ const deliveryEndpoints: RouteEndpoints = [
     },
     {
         name: 'driver response',
-        method: 'get',
+        method: 'post',
         path: '/driver-response',
         handler: driverResHandler
     },
