@@ -259,6 +259,7 @@ export default class AuthenticationController {
       const jwt = Generic.generateJwt({
         userId: user._id,
         level: user.level,
+        type: "customer",
         permissions
       });
 
@@ -443,6 +444,7 @@ export default class AuthenticationController {
       const jwt = Generic.generateJwt({
         userId: rider._id,
         level: rider.level,
+        type: "rider",
         permissions
       });
 
