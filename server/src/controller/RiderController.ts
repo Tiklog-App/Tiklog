@@ -334,27 +334,39 @@ export default class RiderController {
          if(!rider)
             return Promise.reject(CustomAPIError.response('Rider does not exist', HttpStatus.NOT_FOUND.code));
  
-         const findLocation = await datasources.riderLocationDAOService.findByAny({rider: rider._id});
-         
-         const locationUpdateValues = {
-            ...req.body,
-            location: {
-               type: 'Point',
-               coordinates: [longitude, latitude],
-            }
-        }
-        
-        await datasources.riderLocationDAOService.update(
-            {rider: rider._id},
-            locationUpdateValues
-        )
+         const riderLoc = await datasources.riderLocationDAOService.findByAny({rider: rider._id});
 
-         const response: HttpResponse<IRiderLocationModel> = {
+        if(riderLoc) {
+            const locationUpdateValues = {
+                location: {
+                   type: 'Point',
+                   coordinates: [longitude, latitude],
+                }
+            }
+            
+            await datasources.riderLocationDAOService.update(
+                {rider: rider._id},
+                locationUpdateValues
+            )
+
+        } else if(!riderLoc) {
+            const locationValues: Partial<IRiderLocationModel> = {
+                location: {
+                    type: 'Point',
+                    coordinates: [longitude, latitude],
+                },
+                rider: rider._id
+            }
+     
+            await datasources.riderLocationDAOService.create(locationValues as IRiderLocationModel)
+        }
+
+        const response: HttpResponse<IRiderLocationModel> = {
             code: HttpStatus.OK.code,
             message: 'Location updated successfully'
-         };
+        };
  
-         return Promise.resolve(response);
+        return Promise.resolve(response);
      };
  
      /**

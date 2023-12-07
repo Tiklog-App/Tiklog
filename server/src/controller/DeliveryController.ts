@@ -277,7 +277,6 @@ export default class DeliveryController {
             CustomAPIError.response(
                 error.details[0].message, HttpStatus.BAD_REQUEST.code));
 
-
         const deliveries = await datasources.deliveryDAOService.findAll(
             {customer: customerId}
         );
