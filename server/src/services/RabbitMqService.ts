@@ -26,6 +26,7 @@ class RabbitMqService {
   private io: Server<any, any, any, any> | null;
   private pendingRequests: any[];
   private socketMap: Map<any, Socket>;
+  private onlineUsers: any[];
 
   constructor() {
     this.connection = null;
@@ -33,12 +34,13 @@ class RabbitMqService {
     this.io = null;
     this.pendingRequests = [];
     this.socketMap = new Map<any, Socket>();
-    // this.socketMap = {};
+    this.onlineUsers = [];
   }
 
   async connectToRabbitMQ(): Promise<void> {
     this.connection = await amqp.connect(settings.rabbitMq.connection);
     this.channel = await this.connection.createChannel();
+    await this.consumePrivateMessagesFromRabbitMQ();
   }
 
   async disconnectFromRabbitMQ(): Promise<void> {
@@ -49,6 +51,25 @@ class RabbitMqService {
     if (this.connection) {
       await this.connection.close();
       this.connection = null;
+    }
+  }
+
+  async consumePrivateMessagesFromRabbitMQ(): Promise<void> {
+    if (this.channel) {
+      this.channel.assertQueue('privateMessages');
+      this.channel.consume('privateMessages', (msg) => {
+        if (msg) {
+          const { senderId, receiverId, message } = JSON.parse(msg.content.toString());
+          const receiverSocket = this.socketMap.get(receiverId);
+
+          if (receiverSocket) {
+            receiverSocket.emit('privateMessage', { senderId, message });
+          }
+          this.channel!.ack(msg);
+        }
+      }, { noAck: false });
+    } else {
+      throw new CustomAPIError('RabbitMQ channel is not available', HttpStatus.INTERNAL_SERVER_ERROR.code);
     }
   }
 
@@ -241,6 +262,37 @@ class RabbitMqService {
 
   };
 
+  async sendMessageToUser(
+    senderId: any, receiverId: any, 
+    message: string
+    ) {
+      if (receiverId) {
+        
+        // const targetSocketRooms = this.io?.sockets.adapter.rooms.get(receiverId);
+        const targetSocketRooms = this.socketMap.get(receiverId);
+        if (targetSocketRooms) {
+          this.io?.to(receiverId).emit('receivePrivateMessage', { senderId, message });
+        } else {
+          await this.sendMessageToRabbitMQ('privateMessages', JSON.stringify({ senderId, message }));
+        }
+      } else {
+        console.log('Invalid target user ID provided.');
+      }
+
+    }
+  
+    async sendMessageToRabbitMQ(queue: string, message: string): Promise<void> {
+      try {
+        if (this.channel) {
+          this.channel.sendToQueue(queue, Buffer.from(message));
+        } else {
+          throw new CustomAPIError('RabbitMQ channel is not available', HttpStatus.INTERNAL_SERVER_ERROR.code);
+        }
+      } catch (error) {
+        throw new CustomAPIError('Error while sending message to RabbitMQ', HttpStatus.INTERNAL_SERVER_ERROR.code);
+      }
+    }
+
   //Sends a notification to customer notifying package delivery
   async startDeliveryNotification(data: any): Promise<void> {
     const customerSocket = this.socketMap.get(data.customerId);
@@ -345,20 +397,45 @@ class RabbitMqService {
 
       socket.on('riderId', (riderId: any) => {
         if (riderId) {
+          if(!this.onlineUsers.some(user => user.userId === riderId)) {
+            this.onlineUsers.push({
+              riderId,
+              socketId: socket.id
+            })
+          }
           this.socketMap.set(riderId, socket);
           console.log(`Socket set for riderId: ${riderId}`);
         } else {
           console.log('Invalid or disconnected socket.');
         }
+
+        socket.emit("getOnlineUsers", this.onlineUsers);
       });
 
       socket.on('customerId', (customerId: any) => {
         if (customerId) {
+          if(!this.onlineUsers.some(user => user.userId === customerId)) {
+            this.onlineUsers.push({
+              customerId,
+              socketId: socket.id
+            })
+          }
           this.socketMap.set(customerId, socket)
           console.log(`Socket ${socket.id} set for customerId: ${customerId}`);
         } else {
           console.log('Invalid or disconnected socket.');
         }
+
+        socket.emit("getOnlineUsers", this.onlineUsers);
+      });
+
+      socket.on('sendPrivateMessage', (data: any) => {
+        const { senderId, receiverId, message } = data;
+  
+        this.sendMessageToUser(senderId, receiverId, message)
+        
+        // Emit the private message to the receiver's room
+        // io.to(receiverId).emit('receivePrivateMessage', { senderId, message });
       });
 
       socket.on('arrived', (data: any) => {
@@ -395,7 +472,11 @@ class RabbitMqService {
 
       socket.on('disconnect', () => {
         console.log('Client disconnected.');
-        logger.info(`Client with id ${socket.id} disconnected`)
+        logger.info(`Client with id ${socket.id} disconnected`);
+
+        this.onlineUsers = this.onlineUsers.filter(user => user.socketId !== socket.id)
+        console.log(this.onlineUsers, 'online')
+        socket.emit("getOnlineUsers", this.onlineUsers);
 
         // Add riderId to the socketMap when a rider disconnects
         // const riderId = this.findRiderIdBySocketId(socket.id);

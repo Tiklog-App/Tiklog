@@ -21,6 +21,8 @@ import AdminFeeRepository from "../../repositories/AdminFeeRepository";
 import PaymentRequestRepository from "../../repositories/PaymentRequestRepository";
 import TikLogDocsRepository from "../../repositories/TikLogDocsRepository";
 import FAQRepository from "../../repositories/FAQRepository";
+import ChatMessageRepository from "../../repositories/ChatMessageRepository";
+import ChatRepository from "../../repositories/ChatRepository";
 
 import PermissionDAOService from "./PermissionDAOService";
 import RoleDAOService from "./RoleDAOService";
@@ -45,6 +47,8 @@ import AdminFeeDAOService from "./AdminFeeDAOService";
 import PaymentRequestDAOService from "./PaymentRequestDAOService";
 import TikLogDocsDAOService from "./TikLogDocsDAOService";
 import FAQDAOService from "./FAQDAOService";
+import ChatDAOService from "./ChatDAOService";
+import ChatMessageDAOService from "./ChatMessageDAOService";
 
 const permissionRepository = new PermissionRepository();
 const roleRepository = new RoleRepository();
@@ -69,6 +73,8 @@ const adminFeeRepository = new AdminFeeRepository();
 const paymentRequestRepository = new PaymentRequestRepository();
 const tikLogDocsRepository = new TikLogDocsRepository();
 const faqRepository = new FAQRepository();
+const chatMessageRepository = new ChatMessageRepository();
+const chatRepository = new ChatRepository();
 
 const permissionDAOService = new PermissionDAOService(permissionRepository);
 const roleDAOService = new RoleDAOService(roleRepository);
@@ -93,8 +99,12 @@ const adminFeeDAOService = new AdminFeeDAOService(adminFeeRepository);
 const paymentRequestDAOService = new PaymentRequestDAOService(paymentRequestRepository);
 const tikLogDocsDAOService = new TikLogDocsDAOService(tikLogDocsRepository);
 const faqDAOService = new FAQDAOService(faqRepository);
+const chatMessageDAOService = new ChatMessageDAOService(chatMessageRepository);
+const chatDAOService = new ChatDAOService(chatRepository);
 
 export default {
+    chatMessageDAOService,
+    chatDAOService,
     vehicleDAOService,
     vehicleNameDAOService,
     vehicleTypeDAOService,

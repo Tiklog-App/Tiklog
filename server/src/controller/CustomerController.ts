@@ -20,7 +20,7 @@ import {
     UPDATE_CUSTOMER_STATUS_,
     UPLOAD_BASE_PATH
 } from "../config/constants";
-import settings, { CUSTOMER_PERMISSION, DELETE_CUSTOMER, MANAGE_ALL, MANAGE_SOME, READ_CUSTOMER, UPDATE_CUSTOMER } from "../config/settings";
+import settings, { CUSTOMER_PERMISSION, DELETE_CUSTOMER, MANAGE_ALL, MANAGE_SOME, READ_CUSTOMER, RIDER_PERMISSION, UPDATE_CUSTOMER } from "../config/settings";
 import BcryptPasswordEncoder = appCommonTypes.BcryptPasswordEncoder;
 import RedisService from "../services/RedisService";
 import SendMailService from "../services/SendMailService";
@@ -28,6 +28,9 @@ import Generic from "../utils/Generic";
 import formidable, { File } from 'formidable';
 import { $saveCustomerAddress, $updateCustomerAddress, ICustomerAddressModel } from "../models/CustomerAddress";
 import moment = require("moment");
+import ChatMessage, { IChatMessageModel } from "../models/ChatMessages";
+import { Types } from "mongoose";
+import { IChatModel } from "../models/ChatModel";
 
 const redisService = new RedisService();
 const sendMailService = new SendMailService();
@@ -185,6 +188,306 @@ export default class CustomerController {
       
         return Promise.resolve(response);
     };
+
+    /*** CHAT START ***/
+
+    @TryCatch
+    @HasPermission([CUSTOMER_PERMISSION, RIDER_PERMISSION])
+    public  async usersWithIds (req: Request) {
+
+        const { userIds } = req.body;
+        //@ts-ignore
+        const signedInUserId = req.user._id;
+        // .exec();
+
+        const chatUsers = await ChatMessage.find({
+            $or: [
+                { senderId: { $in: userIds } },
+                { receiverId: { $in: userIds } }
+            ]
+        })
+        .populate('senderId', 'firstName profileImageUrl _id')
+        .populate('receiverId', 'firstName profileImageUrl _id')
+        .exec();
+
+        const _users = chatUsers.map((user) => {
+
+            let count = 0;
+            let content = '';
+
+            if (user.senderId && 
+                user.senderId === signedInUserId.toString() &&
+                user.receiverStatus === 'delivered'
+            ) {
+                count += 1;
+                content = user.message;
+            }
+            const result = {
+                //@ts-ignore
+                ...user._doc, 
+                postedAt: Generic.dateDifference(new Date()), 
+                unread: count,
+                lastUnreadMessage: content
+            }
+
+            return result;
+        })
+
+        const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: HttpStatus.OK.value,
+            results: _users,
+        };
+      
+        return Promise.resolve(response);
+    };
+
+    @TryCatch
+    @HasPermission([CUSTOMER_PERMISSION, RIDER_PERMISSION])
+    public async getUserChats(req: Request) {
+        const { error, value } = Joi.object<any>({
+            receiverId: Joi.string().required().label('receiver id'),
+            senderId: Joi.string().required().label('sender id')
+        }).validate(req.body);
+        if (error) return Promise.reject(
+            CustomAPIError.response(
+                error.details[0].message, 
+                HttpStatus.BAD_REQUEST.code
+            ));
+
+        const chats = await datasources.chatMessageDAOService.findAll({
+            receiverId: value.receiverId,
+            senderId: value.senderId
+        });
+
+        const results = chats.map(chat => {
+            let _chat = {
+                //@ts-ignore
+                ...chat._doc, 
+                datePosted: Generic.dateDifference(new Date())}
+            return _chat
+        })
+
+        const response: HttpResponse<IChatMessageModel> = {
+            code: HttpStatus.OK.code,
+            message: 'Successfully fetched notifications.',
+            results
+         };
+ 
+        return Promise.resolve(response);
+
+    }
+
+    @TryCatch
+    public async createChatMessage(req: Request) {
+        const { chatId, senderId, message } = req.body;
+
+        const newMessage = await datasources.chatMessageDAOService.create({
+            chatId, senderId, message
+        } as IChatMessageModel);
+
+        const response: HttpResponse<IChatMessageModel> = {
+            code: HttpStatus.OK.code,
+            message: 'Successful.',
+            result: newMessage
+         };
+ 
+        return Promise.resolve(response);
+    }
+
+    public async getChatMessages(req: Request) {
+        try {
+            const { chatId } = req.params;
+            //@ts-ignore
+            const loggedInUser = req.user._id;
+    
+            const updateUnreadStatus = async (query: any, update: any) => {
+                const unreadMessages = await datasources.chatMessageDAOService.findAll(query);
+    
+                if (unreadMessages.length > 0) {
+                    const unreadMessageIds = unreadMessages.map((message) => new Types.ObjectId(message._id));
+                    await ChatMessage.updateMany(
+                        { _id: { $in: unreadMessageIds } },
+                        update
+                    );
+                }
+            };
+    
+            // Update receiver's unread messages to read
+            await updateUnreadStatus(
+                { chatId, receiverStatus: 'unread', senderId: { $ne: loggedInUser } },
+                { $set: { receiverStatus: 'read' } }
+            );
+    
+            // Update sender's unread messages to read
+            await updateUnreadStatus(
+                { chatId, senderStatus: 'unread', senderId: loggedInUser },
+                { $set: { senderStatus: 'read' } }
+            );
+    
+            // Retrieve all chat messages
+            const messages = await datasources.chatMessageDAOService.findAll({ chatId }, { sort: { createdAt: 1 } });
+    
+            const response: HttpResponse<IChatMessageModel> = {
+                code: HttpStatus.OK.code,
+                message: 'Successfully.',
+                results: messages
+            };
+    
+            return Promise.resolve(response);
+        } catch (error) {
+            // Handle errors appropriately
+            console.error('Error in getChatMessages:', error);
+            const response: HttpResponse<IChatMessageModel> = {
+                code: HttpStatus.INTERNAL_SERVER_ERROR.code,
+                message: 'Internal Server Error',
+                result: null
+            };
+            return Promise.resolve(response);
+        }
+    }
+
+    public async findUserChats(req: Request) {
+        try {
+          const userId = req.params.userId;
+      
+          const chats = await datasources.chatDAOService.findAll({
+            members: { $in: [userId] },
+          });
+      
+          if (!chats)
+            return Promise.reject(
+              CustomAPIError.response(
+                "Not found",
+                HttpStatus.NOT_FOUND.code
+              )
+            );
+      
+          let _member: any = [];
+          await Promise.all(
+            chats.map(async (chat) => {
+                const otherMember = chat.members.find((member) => member !== userId);
+
+                const user = await datasources.userDAOService.findById(otherMember);
+                const chatMessages = await datasources.chatMessageDAOService.findAll({
+                    chatId: chat._id
+                });
+
+                if(!chatMessages)
+                    return Promise.reject(CustomAPIError.response("No chat message found.", HttpStatus.NOT_FOUND.code))
+
+                //@ts-ignore
+                const sortedMessages = chatMessages.sort((a, b) => b.createdAt - a.createdAt);
+                const lastMessage = sortedMessages[0];
+
+                const unreadMessages = sortedMessages.filter((message) => message.receiverStatus === 'unread');
+                const totalUnreadMessages = unreadMessages.length;
+
+                _member.push({
+                    _id: user?._id,
+                    firstName: user?.firstName,
+                    lastName: user?.lastName,
+                    profileImageUrl: user?.profileImageUrl,
+                    chat: chat,
+                    totalUnreadMessages: totalUnreadMessages,
+                    lastMessage: lastMessage ? lastMessage.message : '',
+                    senderId: lastMessage ? lastMessage.senderId : '',
+                    //@ts-ignore
+                    chatDate: lastMessage ? lastMessage.createdAt : null
+                });
+            })
+          );
+
+          const member = _member.sort((a: any, b: any) => b.chatDate - a.chatDate)
+      
+          const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: 'Successfully fetched notifications.',
+            result: { chats, member },
+          };
+      
+          return Promise.resolve(response);
+        } catch (error) {
+          // Handle errors appropriately, log or send an error response
+          console.error(error);
+          return Promise.reject(
+            CustomAPIError.response(
+              "Internal Server Error",
+              HttpStatus.INTERNAL_SERVER_ERROR.code
+            )
+          );
+        }
+    }
+
+    @TryCatch
+    public async createChat (req: Request) {
+        const { firstId, secondId } = req.body;
+
+        const chat = await datasources.chatDAOService.findByAny({
+            members: {$all: [firstId, secondId]}
+        });
+
+        if(!chat) {
+
+            const newChat = await datasources.chatDAOService.create({
+                members: [firstId, secondId]
+            } as IChatModel);
+
+            const response: HttpResponse<IChatModel> = {
+                code: HttpStatus.OK.code,
+                message: 'Successfully created chat.',
+                result: newChat
+            };
+        
+            return Promise.resolve(response);
+        }
+
+        const response: HttpResponse<IChatModel> = {
+            code: HttpStatus.OK.code,
+            message: 'Successfully.',
+            result: chat
+        };
+    
+        return Promise.resolve(response);
+    }
+
+    @TryCatch
+    public async findChat (req: Request) {
+        const {firstId, secondId} = req.params
+
+        const chat = await datasources.chatDAOService.findByAny({
+            members: {$all: [firstId, secondId]}
+        })
+
+        if(!chat) 
+            return Promise.reject(CustomAPIError.response("Not found", HttpStatus.NOT_FOUND.code));
+
+        const response: HttpResponse<IChatModel> = {
+            code: HttpStatus.OK.code,
+            message: 'Successfully fetched notifications.',
+            result: chat
+        };
+    
+        return Promise.resolve(response);
+    }
+
+    @TryCatch
+    @HasPermission([CUSTOMER_PERMISSION])
+    public async deleteChat(req: Request) {
+
+        const chatId = req.params.chatId;
+
+        await datasources.chatMessageDAOService.deleteById(chatId);
+
+        const response: HttpResponse<IChatMessageModel> = {
+            code: HttpStatus.OK.code,
+            message: 'Successfully deleted chat.'
+         };
+ 
+        return Promise.resolve(response);
+    }
+
+    /***** CHAT END *****/
 
     /**
      * @name changePassword

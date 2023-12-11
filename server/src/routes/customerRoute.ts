@@ -105,3 +105,53 @@ export const deleteCustomerAddressHandler = authenticateRouteWrapper(async (req,
 
     res.status(response.code).json(response);
 });
+
+/**** START CHAT ****/
+export const getUsersWithIdsHandler = authenticateRouteWrapper( async (req, res) =>  {
+    const response = await customerController.usersWithIds(req);
+
+    res.status(response.code).json(response);
+});
+
+export const getUserChatsHandler = authenticateRouteWrapper(async (req, res) => {
+    const response = await customerController.getUserChats(req);
+
+    res.status(response.code).json(response);
+});
+
+export const createChatHandler = authenticateRouteWrapper(async (req, res) => {
+    const response = await customerController.createChat(req);
+
+    res.status(response.code).json(response);
+});
+
+export const findChatHandler = authenticateRouteWrapper(async (req, res) => {
+    const response = await customerController.findChat(req);
+
+    res.status(response.code).json(response);
+});
+
+export const findUserChatsHandler = authenticateRouteWrapper(async (req, res) => {
+    const response = await customerController.findUserChats(req);
+
+    res.status(response.code).json(response);
+});
+
+export const createChatMessageHandler = authenticateRouteWrapper(async (req, res) => {
+    const response = await customerController.createChatMessage(req);
+
+    res.status(response.code).json(response);
+});
+
+export const getChatMessagesHandler = authenticateRouteWrapper(async (req, res) => {
+    const response = await customerController.getChatMessages(req);
+
+    res.status(response.code).json(response);
+});
+
+export const deleteChatsHandler = authenticateRouteWrapper(async (req, res) => {
+    const response = await customerController.deleteChat(req);
+
+    res.status(response.code).json(response);
+});
+/**** END CHAT ****/

@@ -16,7 +16,15 @@ import {
     updateCustomerAddressHandler,
     deleteCustomerAddressHandler,
     editCustomerProfileHandler,
-    customerPasswordResetCodeHandler
+    customerPasswordResetCodeHandler,
+    getUserChatsHandler,
+    deleteChatsHandler,
+    createChatHandler,
+    findUserChatsHandler,
+    findChatHandler,
+    createChatMessageHandler,
+    getChatMessagesHandler,
+    getUsersWithIdsHandler
 } from '../../routes/customerRoute';
 
  const customerEndpoints: RouteEndpoints = [
@@ -115,7 +123,55 @@ import {
         method: 'delete',
         path: '/customer-address/:id',
         handler: deleteCustomerAddressHandler
-    }
+    },
+    {
+        name: 'get user chats',
+        method: 'post',
+        path: '/get-user-chats',
+        handler: getUserChatsHandler
+    },
+    {
+        name: 'delete chat',
+        method: 'delete',
+        path: '/delete-chat/:chatId',
+        handler: deleteChatsHandler
+    },
+    {
+        name: 'create chat',
+        method: 'post',
+        path: '/create-chat',
+        handler: createChatHandler
+    },
+    {
+        name: 'find chat',
+        method: 'get',
+        path: '/find-user-chats/:userId',
+        handler: findUserChatsHandler
+    },
+    {
+        name: 'find chat',
+        method: 'get',
+        path: '/find-chat/:firstId/:secondId',
+        handler: findChatHandler
+    },
+    {
+        name: 'create chat message',
+        method: 'post',
+        path: '/create-chat-message',
+        handler: createChatMessageHandler
+    },
+    {
+        name: 'get chat messages',
+        method: 'get',
+        path: '/get-chat-messages/:chatId',
+        handler: getChatMessagesHandler
+    },
+    {
+        name: 'fetch users with ids',
+        method: 'post',
+        path: '/users-with-ids',
+        handler: getUsersWithIdsHandler
+    },
 ];
 
 export default customerEndpoints;

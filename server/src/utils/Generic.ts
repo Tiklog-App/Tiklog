@@ -74,6 +74,28 @@ export default class Generic {
     run();
   }
 
+  public static dateDifference (date: any) {
+    const targetDate = moment(date);
+    const currentDate = moment();
+  
+    const minutesDifference = currentDate.diff(targetDate, 'minutes');
+  
+    let result: any;
+    if (minutesDifference < 60) {
+      result = `${minutesDifference} min`;
+    } else if (minutesDifference < 24 * 60) {
+      const hoursDifference = Math.floor(minutesDifference / 60);
+      result = hoursDifference === 1 ? `${hoursDifference} hour` : `${hoursDifference} hours`;
+    } else if (minutesDifference < 48 * 60) {
+      result = 'Yesterday';
+    } else {
+      result = targetDate.format('DD/MM/YYYY');
+    }
+  
+    return result;
+  
+  }
+
   public static location_difference(senderLat: number, senderLon: number, recipientLat: number, recipientLon: number, speed: number) {
     const earthRadius = 6371;
 
