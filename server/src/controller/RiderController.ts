@@ -1043,6 +1043,7 @@ export default class RiderController {
                     email: _email ? _email : rider.email,
                     profileImageUrl: profile_image && _profileImageUrl,
                     phone: _phone ? _phone : rider.phone,
+                    dob: new Date(value.dob),
                     level: 2
                 };
 

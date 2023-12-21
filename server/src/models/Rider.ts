@@ -89,7 +89,7 @@ export const $updateRiderSchema: Joi.SchemaMap = {
   lastName: Joi.string().label('last name'),
   email: Joi.string().required().label('email'),
   other_names: Joi.string().required().label('other names'),
-  dob: Joi.any().required().label('date of birth'),
+  dob: Joi.string().required().label('date of birth'),
   gender: Joi.string().required().label('gender'),
   profileImageUrl: Joi.string().label('profile image'),
   phone: Joi.string().label('phone')
