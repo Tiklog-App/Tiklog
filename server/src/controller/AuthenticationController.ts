@@ -191,7 +191,8 @@ export default class AuthenticationController {
         const jwt = Generic.generateJwt({
           userId: customer.id,
           level: customer.level,
-          permissions
+          permissions,
+          type: "customer",
         });
 
         //update user authentication date and authentication token
@@ -380,7 +381,8 @@ export default class AuthenticationController {
         const jwt = Generic.generateJwt({
           userId: rider.id,
           level: rider.level,
-          permissions
+          permissions,
+          type: "rider",
         });
 
         //update user authentication date and authentication token

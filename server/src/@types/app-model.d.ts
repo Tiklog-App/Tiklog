@@ -19,6 +19,21 @@ export declare namespace appModelTypes {
     updatedAt: string;
   }
 
+  interface IPackageRequestData {
+    customerId: string,
+    recipientAddress: string,
+    senderAddress: string,
+    riderId: string,
+    riderFirstName: string,
+    senderName: string,
+    arrivalTime: any,
+    deliveryRefNumber: string,
+    estimatedDeliveryTime: string,
+    deliveryId: string,
+    senderPhoto: any,
+    riderPhoto: string
+  }
+
   abstract class AbstractCrudRepository<M extends Document = Document, Id extends any = any> {
     // model?: string;
 

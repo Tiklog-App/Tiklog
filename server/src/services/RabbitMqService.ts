@@ -101,7 +101,8 @@ class RabbitMqService {
         senderName,
         senderAddress,
         recipientAddress,
-        customerId
+        customerId,
+        senderPhoto
       }: any = driver;
 
       const assignedPackage = {
@@ -115,7 +116,8 @@ class RabbitMqService {
         body: `You have been assigned a new delivery request from ${senderName}.`,
         senderAddress: senderAddress,
         recipientAddress: recipientAddress,
-        customerId: customerId
+        customerId: customerId,
+        senderPhoto: senderPhoto
       };
 
       // const driverId = riderId;
@@ -220,7 +222,8 @@ class RabbitMqService {
       title: 'Rider response',
       availability: driverResponse.availability,
       riderId: driverResponse.riderId,
-      arrivalTime: driverResponse.arrivalTime
+      arrivalTime: driverResponse.arrivalTime,
+      riderPhoto: driverResponse.riderPhoto
     }
 
     const customerId = driverResponse.customerId;
@@ -301,12 +304,13 @@ class RabbitMqService {
       const keys = PACKAGE_REQUEST_INFO
       const redisData = await redisService.getToken(keys);
 
-      const {estimatedDeliveryTime, deliveryId, riderId, deliveryRefNumber}: any = redisData;
+      const {estimatedDeliveryTime, deliveryId, riderId, deliveryRefNumber, riderPhoto}: any = redisData;
 
       const deliveryData = {
         ...data,
         deliveryRefNumber,
-        estimatedDeliveryTime: estimatedDeliveryTime
+        estimatedDeliveryTime: estimatedDeliveryTime,
+        riderPhoto
       }
       customerSocket.emit('startDeliveryNotification', deliveryData);
       await datasources.deliveryDAOService.updateByAny(
@@ -328,12 +332,13 @@ class RabbitMqService {
         const keys = PACKAGE_REQUEST_INFO
         const redisData = await redisService.getToken(keys);
   
-        const {estimatedDeliveryTime, deliveryId, riderId, deliveryRefNumber}: any = redisData;
+        const {estimatedDeliveryTime, deliveryId, riderId, deliveryRefNumber, riderPhoto}: any = redisData;
   
         const deliveryData = {
           ...data,
           deliveryRefNumber,
-          estimatedDeliveryTime: estimatedDeliveryTime
+          estimatedDeliveryTime: estimatedDeliveryTime,
+          riderPhoto
         }
         customerSocket.emit('endDeliveryNotification', deliveryData);
         const delivery = await datasources.deliveryDAOService.updateByAny(

@@ -22,6 +22,8 @@ import RabbitMqService from '../services/RabbitMqService';
 import RiderLocation from '../models/RiderLocation';
 import { Socket } from 'socket.io';
 import RedisService from '../services/RedisService';
+import { appModelTypes } from '../@types/app-model';
+import IPackageRequestData = appModelTypes.IPackageRequestData;
 
 const redisService = new RedisService();
 const rabbitMqService = new RabbitMqService();
@@ -413,7 +415,9 @@ export default class DeliveryController {
             arrivalTime += minutes
         };
 
-        const packageRequestData = {
+        const senderDetials = await datasources.customerDAOService.findById(delivery.customer);
+
+        const packageRequestData: IPackageRequestData = {
             customerId: customerId,
             recipientAddress: delivery.recipientAddress,
             senderAddress: delivery.senderAddress,
@@ -423,7 +427,9 @@ export default class DeliveryController {
             arrivalTime: `Rider will arrive in ${arrivalTime}min`,
             deliveryRefNumber: deliveryRefNumber,
             estimatedDeliveryTime: estimatedDeliveryTime,
-            deliveryId: delivery._id
+            deliveryId: delivery._id,
+            senderPhoto: senderDetials?.profileImageUrl,
+            riderPhoto: rider.profileImageUrl
         }
 
         const redisData = JSON.stringify(packageRequestData)
@@ -480,14 +486,11 @@ export default class DeliveryController {
             customerId: customerDetail.customerId,
             riderId: customerDetail.riderId,
             availability: value.availability,
-            arrivalTime: customerDetail.arrivalTime
+            arrivalTime: customerDetail.arrivalTime,
+            riderPhoto: customerDetail.riderPhoto
         };
 
         await rabbitMqService.sendDriverResponse(riderResponse);
-
-        // await redisService.deleteRedisKey(PACKAGE_REQUEST_INFO)
-
-        // await rabbitMqService.disconnectFromRabbitMQ();
 
         const response: HttpResponse<any> = {
             code: HttpStatus.OK.code,
