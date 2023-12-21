@@ -117,7 +117,8 @@ class RabbitMqService {
         senderAddress: senderAddress,
         recipientAddress: recipientAddress,
         customerId: customerId,
-        senderPhoto: senderPhoto
+        senderPhoto: senderPhoto,
+        customerName: senderName
       };
 
       // const driverId = riderId;
