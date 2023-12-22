@@ -74,3 +74,15 @@ export const driverResHandler = async (req: Request, res: Response) =>  {
 
     res.status(response.code).json(response);
 };
+
+export const customerActiveDeliveriesHandler = async (req: Request, res: Response) =>  {
+    const response = await deliveryController.getActiveCustomerDeliveries(req);
+
+    res.status(response.code).json(response);
+};
+
+export const riderActiveDeliveriesHandler = async (req: Request, res: Response) =>  {
+    const response = await deliveryController.getActiveRiderDeliveries(req);
+
+    res.status(response.code).json(response);
+};

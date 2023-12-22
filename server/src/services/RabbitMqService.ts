@@ -8,7 +8,9 @@ import {
   EXPIRATION_AMQP_MESSAGE,
   ON_TRANSIT,
   PACKAGE_REQUEST,
-  PACKAGE_REQUEST_INFO
+  PACKAGE_REQUEST_INFO,
+  RIDER_READY_TO_COLLECT_PACKAGE,
+  RIDER_REQUESTED
 } from '../config/constants';
 import RedisService from './RedisService';
 import { corsOptions } from '../app';
@@ -224,27 +226,32 @@ class RabbitMqService {
       availability: driverResponse.availability,
       riderId: driverResponse.riderId,
       arrivalTime: driverResponse.arrivalTime,
-      riderPhoto: driverResponse.riderPhoto
+      riderPhoto: driverResponse.riderPhoto,
+      riderName: driverResponse.riderName
     }
 
     const customerId = driverResponse.customerId;
     console.log(customerId, 'customer id')
     const customerSocket = this.socketMap.get(customerId);
     console.log(customerSocket?.id, 'cus socket id')
+    const redisData = await redisService.getToken(PACKAGE_REQUEST_INFO);
+    const { riderId, deliveryId }: any = redisData;
     if (customerSocket) {
       if(driverResponse.availability) {
         customerSocket.emit('riderResponse', notification);
         this.riderAvailability(driverResponse.availability);
-        const redisData = await redisService.getToken(PACKAGE_REQUEST_INFO);
-        const { riderId, deliveryId }: any = redisData;
         await datasources.deliveryDAOService.updateByAny(
           { _id: deliveryId },
-          { rider: riderId }
+          { rider: riderId, status: RIDER_REQUESTED }
         )
 
       } else {
         this.riderAvailability(driverResponse.availability);
-        customerSocket.emit('riderDeclined', 'Rider declined your request');
+        customerSocket.emit('riderDeclined', {
+          body: 'Rider declined your request',
+          riderName: driverResponse.riderName,
+          riderPhoto: driverResponse.riderPhoto,
+        });
         await redisService.deleteRedisKey(PACKAGE_REQUEST_INFO)
       }
     }
@@ -325,59 +332,78 @@ class RabbitMqService {
     }
   }
 
-    //Sends a notification to customer notifying package delivered
-    async endDeliveryNotification(data: any): Promise<void> {
-      const customerSocket = this.socketMap.get(data.customerId);
-      if(customerSocket){
-        console.log('delivery ended')
-        const keys = PACKAGE_REQUEST_INFO
-        const redisData = await redisService.getToken(keys);
-  
-        const {estimatedDeliveryTime, deliveryId, riderId, deliveryRefNumber, riderPhoto}: any = redisData;
-  
-        const deliveryData = {
-          ...data,
-          deliveryRefNumber,
-          estimatedDeliveryTime: estimatedDeliveryTime,
-          riderPhoto
-        }
-        customerSocket.emit('endDeliveryNotification', deliveryData);
-        const delivery = await datasources.deliveryDAOService.updateByAny(
-          {_id: deliveryId},
-          {status: DELIVERED}
-        )
-        await datasources.riderDAOService.updateByAny(
-          { _id: riderId },
-          { busy: false }
-        )
-        
-        const riderWallet = await datasources.riderWalletDAOService.findByAny({ rider: riderId });
-        const adminFee = delivery && ADMIN_CHARGES/100 * delivery.deliveryFee;
-        const riderFee = delivery && delivery.deliveryFee - Math.round(adminFee as number) as number;
+  //Sends a notification to customer notifying package delivered
+  async endDeliveryNotification(data: any): Promise<void> {
+    const customerSocket = this.socketMap.get(data.customerId);
+    if(customerSocket){
+      console.log('delivery ended')
+      const keys = PACKAGE_REQUEST_INFO
+      const redisData = await redisService.getToken(keys);
 
-        if(riderWallet) {
-          await datasources.riderWalletDAOService.update(
-            { _id: riderWallet._id },
-            { balance: riderFee && riderFee + riderWallet.balance }
-          )
-        } else {
-          const walletValues = {
-            rider: riderId,
-            balance: riderFee
-          }
-          await datasources.riderWalletDAOService.create(walletValues as any)
-        }
+      const {estimatedDeliveryTime, deliveryId, riderId, deliveryRefNumber, riderPhoto}: any = redisData;
 
-        //saves the admin charges for the delivery
-        await datasources.adminFeeDAOService.create({
-          deliveryRefNumber: deliveryRefNumber,
-          rider: riderId,
-          adminFee: adminFee
-        } as any)
-
-        await redisService.deleteRedisKey(keys)
+      const deliveryData = {
+        ...data,
+        deliveryRefNumber,
+        estimatedDeliveryTime: estimatedDeliveryTime,
+        riderPhoto
       }
+      customerSocket.emit('endDeliveryNotification', deliveryData);
+      const delivery = await datasources.deliveryDAOService.updateByAny(
+        {_id: deliveryId},
+        {status: DELIVERED}
+      )
+      await datasources.riderDAOService.updateByAny(
+        { _id: riderId },
+        { busy: false }
+      )
+      
+      const riderWallet = await datasources.riderWalletDAOService.findByAny({ rider: riderId });
+      const adminFee = delivery && ADMIN_CHARGES/100 * delivery.deliveryFee;
+      const riderFee = delivery && delivery.deliveryFee - Math.round(adminFee as number) as number;
+
+      if(riderWallet) {
+        await datasources.riderWalletDAOService.update(
+          { _id: riderWallet._id },
+          { balance: riderFee && riderFee + riderWallet.balance }
+        )
+      } else {
+        const walletValues = {
+          rider: riderId,
+          balance: riderFee
+        }
+        await datasources.riderWalletDAOService.create(walletValues as any)
+      }
+
+      //saves the admin charges for the delivery
+      await datasources.adminFeeDAOService.create({
+        deliveryRefNumber: deliveryRefNumber,
+        rider: riderId,
+        adminFee: adminFee
+      } as any)
+
+      await redisService.deleteRedisKey(keys)
     }
+  }
+
+  //Notify customer of rider's arrival
+  async handleRiderArrival(data: any) {
+    const redisData = await redisService.getToken(PACKAGE_REQUEST_INFO);
+    const { deliveryId }: any = redisData;
+
+    const customerSocket = this.socketMap.get(data.customerId);
+    if(customerSocket){
+      console.log('rider has arrived');
+
+      await datasources.deliveryDAOService.updateByAny(
+        { _id: deliveryId },
+        { status: RIDER_READY_TO_COLLECT_PACKAGE }
+      )
+      
+      customerSocket.emit('riderArrivalNotification', data.riderArrived)
+    }
+
+  }
 
   findSocketIdByRiderId(riderId: any): any | undefined {
     return this.socketMap.get(riderId);
@@ -446,11 +472,7 @@ class RabbitMqService {
 
       socket.on('arrived', (data: any) => {
         if(data) {
-          const customerSocket = this.socketMap.get(data.customerId);
-          if(customerSocket){
-            console.log('rider has arrived')
-            customerSocket.emit('riderArrivalNotification', data.riderArrived)
-          }
+          this.handleRiderArrival(data)
         }
       })
 

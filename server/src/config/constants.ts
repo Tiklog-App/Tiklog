@@ -44,6 +44,8 @@ import QueueEvents = appCommonTypes.QueueEvents;
   export const DELIVERED = 'delivered';
   export const CANCELED = 'canceled';
   export const PAID = 'paid';
+  export const RIDER_REQUESTED = 'rider_requested';
+  export const RIDER_READY_TO_COLLECT_PACKAGE = 'rider_ready_to_collect_package';
 
   export const RIDER_STATUS_PENDING = 'pending';
   export const RIDER_STATUS_ONLINE = 'online';

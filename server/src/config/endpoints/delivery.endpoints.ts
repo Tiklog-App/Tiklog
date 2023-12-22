@@ -3,6 +3,7 @@ import RouteEndpoints = appCommonTypes.RouteEndpoints;
 import {
     cancelDeliveryHandler,
     createDeliveryHandler,
+    customerActiveDeliveriesHandler,
     deleteDeliveryHandler,
     driverResHandler,
     editDeliveryHandler,
@@ -12,7 +13,8 @@ import {
     getDeliveriesHandler,
     getSingleDeliveryHandler,
     packageReqHandler,
-    payForDeliveryHandler
+    payForDeliveryHandler,
+    riderActiveDeliveriesHandler
 } from '../../routes/deliveryRoute';
 
 const deliveryEndpoints: RouteEndpoints = [
@@ -87,6 +89,18 @@ const deliveryEndpoints: RouteEndpoints = [
         method: 'post',
         path: '/find-riders',
         handler: findRidersHandler
+    },
+    {
+        name: 'get active customer deliveries',
+        method: 'get',
+        path: '/find-active-customer-deliveries',
+        handler: customerActiveDeliveriesHandler
+    },
+    {
+        name: 'get active rider deliveries',
+        method: 'get',
+        path: '/find-active-rider-deliveries',
+        handler: riderActiveDeliveriesHandler
     }
 ];
 

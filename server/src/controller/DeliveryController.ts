@@ -487,7 +487,8 @@ export default class DeliveryController {
             riderId: customerDetail.riderId,
             availability: value.availability,
             arrivalTime: customerDetail.arrivalTime,
-            riderPhoto: customerDetail.riderPhoto
+            riderPhoto: customerDetail.riderPhoto,
+            riderName: customerDetail.riderFirstName
         };
 
         await rabbitMqService.sendDriverResponse(riderResponse);
@@ -495,6 +496,48 @@ export default class DeliveryController {
         const response: HttpResponse<any> = {
             code: HttpStatus.OK.code,
             message: `Rider response`
+        };
+      
+        return Promise.resolve(response);
+    }
+
+    @TryCatch
+    public async getActiveCustomerDeliveries(req: Request) {
+        //@ts-ignore
+        const customerId = req.user._id;
+
+        const deliveries = await datasources.deliveryDAOService.findAll({
+            $and: [
+                { customer: customerId },
+                { status: { $nin: [DELIVERED, PENDING, CANCELED] } }
+            ]
+        });
+
+        const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: `Deliveries`,
+            results: deliveries
+        };
+      
+        return Promise.resolve(response);
+    }
+
+    @TryCatch
+    public async getActiveRiderDeliveries(req: Request) {
+        //@ts-ignore
+        const riderId = req.user._id;
+
+        const deliveries = await datasources.deliveryDAOService.findAll({
+            $and: [
+                { rider: riderId },
+                { status: { $nin: [DELIVERED, PENDING, CANCELED] } }
+            ]
+        });
+
+        const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: `Deliveries`,
+            results: deliveries
         };
       
         return Promise.resolve(response);
