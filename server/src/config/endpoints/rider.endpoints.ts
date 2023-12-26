@@ -18,6 +18,7 @@ import {
     getSingleRiderLicenseHandler,
     getSingleRiderRequestHandler,
     isExpiredLicenseHandler,
+    ratingHandler,
     resetRiderPasswordHandler,
     riderLicenseHandler,
     riderPasswordResetCodeHandler,
@@ -213,6 +214,12 @@ const riderEndpoints: RouteEndpoints = [
         method: 'get',
         path: '/rider-request/:requestId',
         handler: getSingleRiderRequestHandler
+    },
+    {
+        name: 'rating rider',
+        method: 'put',
+        path: '/rider-rating',
+        handler: ratingHandler
     }
 ];
 

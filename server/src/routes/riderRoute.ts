@@ -189,3 +189,9 @@ export const getSingleRiderRequestHandler = authenticateRouteWrapper( async (req
 
     res.status(response.code).json(response);
 });
+
+export const ratingHandler = authenticateRouteWrapper( async (req, res) =>  {
+    const response = await riderController.rating(req);
+
+    res.status(response.code).json(response);
+});

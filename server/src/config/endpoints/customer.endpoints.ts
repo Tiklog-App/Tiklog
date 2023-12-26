@@ -24,7 +24,8 @@ import {
     findChatHandler,
     createChatMessageHandler,
     getChatMessagesHandler,
-    getUsersWithIdsHandler
+    getUsersWithIdsHandler,
+    ratingHandler
 } from '../../routes/customerRoute';
 
  const customerEndpoints: RouteEndpoints = [
@@ -172,6 +173,12 @@ import {
         path: '/users-with-ids',
         handler: getUsersWithIdsHandler
     },
+    {
+        name: 'rating customer',
+        method: 'put',
+        path: '/customer-rating',
+        handler: ratingHandler
+    }
 ];
 
 export default customerEndpoints;

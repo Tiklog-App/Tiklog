@@ -29,6 +29,7 @@ interface IRider {
   accountName: string | null;
   accountNumber: string | null;
   createdAt: Date;
+  rating: number;
 }
 
 const riderSchema = new Schema<IRider>({
@@ -57,7 +58,8 @@ const riderSchema = new Schema<IRider>({
   bankName: { type: String, allowNull: true },
   accountName: { type: String, allowNull: true },
   accountNumber: { type: String, allowNull: true },
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
+  rating: { type: Number, default: 0}
 });
 
 riderSchema.pre('find', function (next) {

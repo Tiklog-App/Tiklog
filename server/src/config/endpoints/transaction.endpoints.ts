@@ -5,6 +5,7 @@ import {
     fetchPaymentRequestHandler,
     getCustomerTransactionsHandler,
     getCustomerWalletHandler,
+    getRiderTransactionsHandler,
     getRiderWalletHandler,
     getTransactionByRefHandler,
     getTransactionsHandler,
@@ -39,6 +40,12 @@ const transactionEndpoints: RouteEndpoints = [
         method: 'get',
         path: '/transactions/customer',
         handler: getCustomerTransactionsHandler
+    },
+    {
+        name: 'get rider transactions',
+        method: 'get',
+        path: '/transactions/rider',
+        handler: getRiderTransactionsHandler
     },
     {
         name: 'get transactions',

@@ -809,6 +809,33 @@ export default class RiderController {
         return Promise.resolve(response);
     };
 
+    @TryCatch
+    @HasPermission([CUSTOMER_PERMISSION])
+    public async rating(req: Request) {
+        
+        const { error, value } = Joi.object<any>({
+            riderId: Joi.string().required().label("Rider id"),
+            rating: Joi.number().required().label("Rating")
+        }).validate(req.body);
+        if(error) return Promise.reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
+
+        const rider = await datasources.riderDAOService.findById(value.riderId);
+        if(!rider)
+            return Promise.reject(CustomAPIError.response("Customer not found", HttpStatus.NOT_FOUND.code));
+
+        await datasources.riderDAOService.updateByAny(
+            {_id: rider._id},
+            {rating: value.rating}
+        )
+
+        const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: "Successfully rated rider"
+        };
+
+        return Promise.resolve(response);
+    }
+
     private async doCreateRiderLicense(req: Request): Promise<HttpResponse<IRiderLicenseModel>> {
         return new Promise((resolve, reject) => {
             form.parse(req, async (err, fields, files) => {

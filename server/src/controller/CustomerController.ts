@@ -820,6 +820,33 @@ export default class CustomerController {
         return Promise.resolve(response);
     };
 
+    @TryCatch
+    @HasPermission([RIDER_PERMISSION])
+    public async rating(req: Request) {
+        
+        const { error, value } = Joi.object<any>({
+            customerId: Joi.string().required().label("Customer id"),
+            rating: Joi.number().required().label("Rating")
+        }).validate(req.body);
+        if(error) return Promise.reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
+
+        const customer = await datasources.customerDAOService.findById(value.customerId);
+        if(!customer)
+            return Promise.reject(CustomAPIError.response("Customer not found", HttpStatus.NOT_FOUND.code));
+
+        await datasources.customerDAOService.updateByAny(
+            {_id: customer._id},
+            {rating: value.rating}
+        )
+
+        const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: "Successfully rated customer"
+        };
+
+        return Promise.resolve(response);
+    }
+
     private async doUpdateCustomer(req: Request): Promise<HttpResponse<ICustomerModel>> {
         return new Promise((resolve, reject) => {
             form.parse(req, async (err, fields, files) => {

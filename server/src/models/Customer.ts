@@ -24,6 +24,7 @@ interface ICustomer {
   level: number;
   passwordResetCode: string | null;
   createdAt: Date;
+  rating: number;
 }
 
 const customerSchema = new Schema<ICustomer>({
@@ -46,7 +47,8 @@ const customerSchema = new Schema<ICustomer>({
   roles: [{ type: Schema.Types.ObjectId, ref: 'Role' }],
   level: { type: Number, default: 0 },
   passwordResetCode: { type: String, allowNull: true },
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
+  rating: { type: Number, default: 0}
 });
 
 // customerSchema.pre('remove', async function (next) {

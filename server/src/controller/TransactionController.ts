@@ -340,13 +340,31 @@ export default class TransactionController {
     }
 
     @TryCatch
-    @HasPermission([CUSTOMER_PERMISSION, READ_TRANSACTION])
+    @HasPermission([CUSTOMER_PERMISSION])
     public async getCustomerTransactions(req: Request) {
 
         //@ts-ignore
         const customerId = req.user._id;
 
         const transactions = await datasources.transactionDAOService.findAll({ customer: customerId });
+
+        const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: HttpStatus.OK.value,
+            results: transactions 
+        };
+
+        return Promise.resolve(response);
+    }
+
+    @TryCatch
+    @HasPermission([RIDER_PERMISSION])
+    public async getRiderTransactions(req: Request) {
+
+        //@ts-ignore
+        const riderId = req.user._id;
+
+        const transactions = await datasources.transactionDAOService.findAll({ rider: riderId });
 
         const response: HttpResponse<any> = {
             code: HttpStatus.OK.code,

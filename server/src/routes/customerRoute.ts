@@ -106,6 +106,12 @@ export const deleteCustomerAddressHandler = authenticateRouteWrapper(async (req,
     res.status(response.code).json(response);
 });
 
+export const ratingHandler = authenticateRouteWrapper(async (req, res) => {
+    const response = await customerController.rating(req);
+
+    res.status(response.code).json(response);
+});
+
 /**** START CHAT ****/
 export const getUsersWithIdsHandler = authenticateRouteWrapper( async (req, res) =>  {
     const response = await customerController.usersWithIds(req);

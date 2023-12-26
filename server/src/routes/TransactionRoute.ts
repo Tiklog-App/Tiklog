@@ -28,6 +28,12 @@ export const getCustomerTransactionsHandler = authenticateRouteWrapper(async (re
     res.status(response.code).json(response);
 });
 
+export const getRiderTransactionsHandler = authenticateRouteWrapper(async (req, res) => {
+    const response = await transactionController.getRiderTransactions(req);
+
+    res.status(response.code).json(response);
+});
+
 export const getTransactionsHandler = authenticateRouteWrapper(async (req, res) => {
     const response = await transactionController.getTransactions(req);
 
