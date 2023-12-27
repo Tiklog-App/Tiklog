@@ -275,14 +275,15 @@ class RabbitMqService {
 
   async sendMessageToUser(
     senderId: any, receiverId: any, 
-    message: string
+    message: string, chatId: string
     ) {
       if (receiverId) {
         
         // const targetSocketRooms = this.io?.sockets.adapter.rooms.get(receiverId);
         const targetSocketRooms = this.socketMap.get(receiverId);
         if (targetSocketRooms) {
-          this.io?.to(receiverId).emit('receivePrivateMessage', { senderId, message });
+          // this.io?.to(receiverId).emit('receivePrivateMessage', { senderId, message });
+          targetSocketRooms.emit('receivePrivateMessage', { senderId, message });
         } else {
           await this.sendMessageToRabbitMQ('privateMessages', JSON.stringify({ senderId, message }));
         }
@@ -462,9 +463,9 @@ class RabbitMqService {
       });
 
       socket.on('sendPrivateMessage', (data: any) => {
-        const { senderId, receiverId, message } = data;
+        const { senderId, receiverId, message, chatId } = data;
   
-        this.sendMessageToUser(senderId, receiverId, message)
+        this.sendMessageToUser(senderId, receiverId, message, chatId)
         
         // Emit the private message to the receiver's room
         // io.to(receiverId).emit('receivePrivateMessage', { senderId, message });
