@@ -405,7 +405,9 @@ export default class DeliveryController {
             firstName: rider.firstName,
             lastName: rider.lastName,
             gender: rider.gender,
-            profileImage: rider.profileImageUrl
+            profileImage: rider.profileImageUrl,
+            plateNumber: vehicle?.licencePlateNumber,
+            vehicleDetails: `${vehicle?.vehicleColor} ${vehicle?.vehicleModel} ${vehicle?.vehicleName} ${vehicle?.vehicleModel}`
         };
 
         let arrivalTime = 0
@@ -505,22 +507,34 @@ export default class DeliveryController {
     public async getActiveCustomerDeliveries(req: Request) {
         //@ts-ignore
         const customerId = req.user._id;
-
+    
         const deliveries = await datasources.deliveryDAOService.findAll({
             $and: [
                 { customer: customerId },
                 { status: { $nin: [DELIVERED, PENDING, CANCELED] } }
             ]
         });
-
+    
+        const result = await Promise.all(deliveries.map(async (delivery) => {
+            const vehicle = await datasources.vehicleDAOService.findByAny({ rider: delivery.rider });
+    
+            const payload = {
+                ...delivery,
+                plateNumber: vehicle?.licencePlateNumber,
+                vehicleDetails: `${vehicle?.vehicleColor} ${vehicle?.vehicleModel} ${vehicle?.vehicleName} ${vehicle?.vehicleModel}`
+            };
+            return payload;
+        }));
+    
         const response: HttpResponse<any> = {
             code: HttpStatus.OK.code,
             message: `Deliveries`,
-            results: deliveries
+            results: result
         };
-      
+    
         return Promise.resolve(response);
     }
+    
 
     @TryCatch
     public async getActiveRiderDeliveries(req: Request) {
