@@ -283,9 +283,9 @@ class RabbitMqService {
         const targetSocketRooms = this.socketMap.get(receiverId);
         if (targetSocketRooms) {
           // this.io?.to(receiverId).emit('receivePrivateMessage', { senderId, message });
-          targetSocketRooms.emit('receivePrivateMessage', { senderId, message });
+          targetSocketRooms.emit('receivePrivateMessage', { senderId, chatId, message, createdAt: new Date(), updatedAt: new Date() });
         } else {
-          await this.sendMessageToRabbitMQ('privateMessages', JSON.stringify({ senderId, message }));
+          await this.sendMessageToRabbitMQ('privateMessages', JSON.stringify({ senderId, chatId, message, createdAt: new Date(), updatedAt: new Date() }));
         }
       } else {
         console.log('Invalid target user ID provided.');
