@@ -511,24 +511,25 @@ export default class DeliveryController {
         const deliveries = await datasources.deliveryDAOService.findAll({
             $and: [
                 { customer: customerId },
-                { status: { $nin: [DELIVERED, PENDING, CANCELED] } }
+                { status: { $nin: [DELIVERED, PENDING, CANCELED, PAID] } }
             ]
         });
     
         const result = await Promise.all(deliveries.map(async (delivery) => {
             const vehicle = await datasources.vehicleDAOService.findByAny({ rider: delivery.rider });
     
-            const payload = {
-                ...delivery,
-                plateNumber: vehicle?.licencePlateNumber,
-                vehicleDetails: `${vehicle?.vehicleColor} ${vehicle?.vehicleModel} ${vehicle?.vehicleName} ${vehicle?.vehicleModel}`
+            return {
+                ...delivery.toObject(),
+                plateNumber: vehicle?.licencePlateNumber || '',
+                vehicleDetails: vehicle
+                    ? `${vehicle.vehicleColor} ${vehicle.vehicleModel} ${vehicle.vehicleName} ${vehicle.vehicleModel}`
+                    : ''
             };
-            return payload;
         }));
     
         const response: HttpResponse<any> = {
             code: HttpStatus.OK.code,
-            message: `Deliveries`,
+            message: 'Deliveries',
             results: result
         };
     
@@ -544,7 +545,7 @@ export default class DeliveryController {
         const deliveries = await datasources.deliveryDAOService.findAll({
             $and: [
                 { rider: riderId },
-                { status: { $nin: [DELIVERED, PENDING, CANCELED] } }
+                { status: { $nin: [DELIVERED, PENDING, CANCELED, PAID] } }
             ]
         });
 
