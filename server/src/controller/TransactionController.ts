@@ -126,6 +126,89 @@ export default class TransactionController {
 
     };
 
+    @TryCatch
+    public async mobileAddToWallet(req: Request) {
+
+        const { error, value } = Joi.object<any>({
+            amount: Joi.string().required().label('Amount'),
+            reference: Joi.string().required().label('Reference')
+        }).validate(req.body);
+
+        //@ts-ignore
+        const userId = req.user._id;
+
+        const customer = await datasources.customerDAOService.findById(userId)
+        if (!customer) {
+            return Promise.reject(CustomAPIError.response('Customer Does not exist.', HttpStatus.NOT_FOUND.code));
+        }
+        
+        //verify payment
+        axiosClient.defaults.baseURL = `${process.env.PAYMENT_GW_BASE_URL}`;
+        axiosClient.defaults.headers.common['Authorization'] = `Bearer ${process.env.PAYMENT_GW_SECRET_KEY}`;
+
+        const endpoint = `/transaction/verify/${value.reference}`;
+
+        const axiosResponse = await axiosClient.get(endpoint);
+
+        const data = axiosResponse.data.data;
+
+        const $transaction = {
+            reference: data.reference,
+            channel: data.authorization.channel,
+            cardType: data.authorization.card_type,
+            bank: data.authorization.bank,
+            last4: data.authorization.last4,
+            expMonth: data.authorization.exp_month,
+            expYear: data.authorization.exp_year,
+            countryCode: data.authorization.country_code,
+            brand: data.authorization.brand,
+            currency: data.currency,
+            status: data.status,
+            paidAt: data.paid_at,
+            type: data.type
+        };
+
+        const transaction = await datasources.transactionDAOService.create($transaction as ITransactionModel);
+
+        const findWallet = await datasources.walletDAOService.findByAny({
+            customer: customer._id
+        });
+
+         // create wallet/update wallet
+         if(!findWallet) {
+
+            const walletValue: Partial<IWalletModel> = {
+                balance: value.amount,
+                customer: customer._id
+            }
+
+            const wallet = await datasources.walletDAOService.create(walletValue as IWalletModel)
+
+            wallet.transactions.push(transaction._id);
+            await wallet.save();
+        
+        } else {
+            const walletValue = {
+                balance: findWallet.balance + transaction.amount
+            }
+
+            const wallet = await datasources.walletDAOService.updateByAny(
+                {_id: findWallet._id},
+                walletValue
+            );
+
+            wallet?.transactions.push(transaction._id);
+            await wallet?.save();
+        };
+
+        const response: HttpResponse<void> = {
+            code: HttpStatus.OK.code,
+            message: HttpStatus.OK.value,
+        };
+
+        return Promise.resolve(response);
+    };
+
       /**
    * @name initTransactionCallback
    * @description This method handles verification of the transactions

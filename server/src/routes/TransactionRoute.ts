@@ -81,3 +81,9 @@ export const mobileTransactionAddToWalletHandler = authenticateRouteWrapper(asyn
 
     res.status(response.code).json(response);
 });
+
+export const mobileAddToWalletHandler = authenticateRouteWrapper(async (req, res) => {
+    const response = await transactionController.mobileAddToWallet(req);
+
+    res.status(response.code).json(response);
+});
