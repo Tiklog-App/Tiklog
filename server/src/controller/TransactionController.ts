@@ -130,7 +130,7 @@ export default class TransactionController {
     public async mobileAddToWallet(req: Request) {
 
         const { error, value } = Joi.object<any>({
-            amount: Joi.string().required().label('Amount'),
+            amount: Joi.number().required().label('Amount'),
             reference: Joi.string().required().label('Reference')
         }).validate(req.body);
 
