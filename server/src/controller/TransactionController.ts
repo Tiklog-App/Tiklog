@@ -130,8 +130,8 @@ export default class TransactionController {
     public async mobileAddToWallet(req: Request) {
 
         const { error, value } = Joi.object<any>({
-            amount: Joi.number().required().label('Amount'),
-            reference: Joi.string().required().label('Reference')
+            reference: Joi.string().required().label('Reference'),
+            amount: Joi.number().required().label('Amount')
         }).validate(req.body);
 
         //@ts-ignore
@@ -141,13 +141,20 @@ export default class TransactionController {
         if (!customer) {
             return Promise.reject(CustomAPIError.response('Customer Does not exist.', HttpStatus.NOT_FOUND.code));
         }
+
+        const _transaction = await datasources.transactionDAOService.findByAny({
+            reference: value.reference
+         });
+         if (_transaction) {
+             return Promise.reject(CustomAPIError.response('Transaction already exist.', HttpStatus.NOT_FOUND.code));
+         }
         
         //verify payment
         axiosClient.defaults.baseURL = `${process.env.PAYMENT_GW_BASE_URL}`;
         axiosClient.defaults.headers.common['Authorization'] = `Bearer ${process.env.PAYMENT_GW_SECRET_KEY}`;
 
         const endpoint = `/transaction/verify/${value.reference}`;
-
+        
         const axiosResponse = await axiosClient.get(endpoint);
 
         const data = axiosResponse.data.data;
@@ -165,7 +172,9 @@ export default class TransactionController {
             currency: data.currency,
             status: data.status,
             paidAt: data.paid_at,
-            type: data.type
+            type: data.type,
+            amount: value.amount,
+            customer: customer._id
         };
 
         const transaction = await datasources.transactionDAOService.create($transaction as ITransactionModel);
@@ -178,7 +187,7 @@ export default class TransactionController {
          if(!findWallet) {
 
             const walletValue: Partial<IWalletModel> = {
-                balance: value.amount,
+                balance: transaction.amount,
                 customer: customer._id
             }
 
