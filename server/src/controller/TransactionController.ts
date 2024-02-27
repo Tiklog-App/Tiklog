@@ -616,59 +616,77 @@ export default class TransactionController {
         if(paymentReq && paymentReq?.status === PAYMENT_IN_PROGRESS)
             return Promise.reject(CustomAPIError.response("You have a pending payment request.", HttpStatus.NOT_FOUND.code));
         
-        //@ts-ignore
-        if (paymentReq && paymentReq.status === PAYMENT_DONE) {
-            const currentDate = new Date();
-            //@ts-ignore
-            const createdAtDate = new Date(paymentReq.createdAt);
+        // //@ts-ignore
+        // if (paymentReq && paymentReq.status === PAYMENT_DONE) {
+        //     const currentDate = new Date();
+        //     //@ts-ignore
+        //     const createdAtDate = new Date(paymentReq.createdAt);
           
-            const timeDifference = currentDate.getTime() - createdAtDate.getTime();
-            if (timeDifference >= SEVEN_DAYS_IN_MS && createdAtDate.getDay() === 1) {
-                const values = {
-                    rider: riderId,
-                    amountRequested: value.amountRequested,
-                    status: PAYMENT_IN_PROGRESS,
-                    refNumber: Generic.generatePaymentRefNumber(6)
-                }
+        //     const timeDifference = currentDate.getTime() - createdAtDate.getTime();
+        //     if (timeDifference >= SEVEN_DAYS_IN_MS && createdAtDate.getDay() === 1) {
+        //         const values = {
+        //             rider: riderId,
+        //             amountRequested: value.amountRequested,
+        //             status: PAYMENT_IN_PROGRESS,
+        //             refNumber: Generic.generatePaymentRefNumber(6)
+        //         }
         
-                const payment = await datasources.paymentRequestDAOService.create(values as any);
+        //         const payment = await datasources.paymentRequestDAOService.create(values as any);
         
-                await datasources.riderWalletDAOService.update(
-                    { rider: riderId },
-                    { balance: riderWallet.balance - payment.amountRequested }
-                )
+        //         await datasources.riderWalletDAOService.update(
+        //             { rider: riderId },
+        //             { balance: riderWallet.balance - payment.amountRequested }
+        //         )
               
-            } else {
-                return Promise.reject(CustomAPIError.response("Your withdrawal duration is not complete", HttpStatus.INTERNAL_SERVER_ERROR.code))
-            }
+        //     } else {
+        //         return Promise.reject(CustomAPIError.response("Your withdrawal duration is not complete", HttpStatus.INTERNAL_SERVER_ERROR.code))
+        //     }
+        // }
+
+        // //@ts-ignore
+        // if (!paymentReq && rider.createdAt) {
+        //     const currentDate = new Date();
+        //     //@ts-ignore
+        //     const createdAtDate = new Date(rider.createdAt);
+          
+        //     const timeDifference = currentDate.getTime() - createdAtDate.getTime();
+        //     if (timeDifference >= SEVEN_DAYS_IN_MS && currentDate.getDay() === 1) {
+        //         const values = {
+        //             rider: riderId,
+        //             amountRequested: value.amountRequested,
+        //             status: PAYMENT_IN_PROGRESS,
+        //             refNumber: Generic.generateRandomStringCrypto(6)
+        //         }
+        
+        //         const payment = await datasources.paymentRequestDAOService.create(values as any);
+        
+        //         await datasources.riderWalletDAOService.update(
+        //             { rider: riderId },
+        //             { balance: riderWallet.balance - payment.amountRequested }
+        //         )
+              
+        //     } else {
+        //         return Promise.reject(CustomAPIError.response("Your withdrawal duration is not complete", HttpStatus.INTERNAL_SERVER_ERROR.code))
+        //     }
+        // }
+
+        if(riderWallet.balance < 2000) {
+            return Promise.reject(CustomAPIError.response("Amount is wallet is too small.", HttpStatus.BAD_REQUEST.code));
         }
 
-        //@ts-ignore
-        if (!paymentReq && rider.createdAt) {
-            const currentDate = new Date();
-            //@ts-ignore
-            const createdAtDate = new Date(rider.createdAt);
-          
-            const timeDifference = currentDate.getTime() - createdAtDate.getTime();
-            if (timeDifference >= SEVEN_DAYS_IN_MS && currentDate.getDay() === 1) {
-                const values = {
-                    rider: riderId,
-                    amountRequested: value.amountRequested,
-                    status: PAYMENT_IN_PROGRESS,
-                    refNumber: Generic.generateRandomStringCrypto(6)
-                }
-        
-                const payment = await datasources.paymentRequestDAOService.create(values as any);
-        
-                await datasources.riderWalletDAOService.update(
-                    { rider: riderId },
-                    { balance: riderWallet.balance - payment.amountRequested }
-                )
-              
-            } else {
-                return Promise.reject(CustomAPIError.response("Your withdrawal duration is not complete", HttpStatus.INTERNAL_SERVER_ERROR.code))
-            }
+        const values = {
+            rider: riderId,
+            amountRequested: value.amountRequested,
+            status: PAYMENT_IN_PROGRESS,
+            refNumber: Generic.generateRandomStringCrypto(6)
         }
+
+        const payment = await datasources.paymentRequestDAOService.create(values as any);
+
+        await datasources.riderWalletDAOService.update(
+            { rider: riderId },
+            { balance: riderWallet.balance - payment.amountRequested }
+        )
     
         const response: HttpResponse<any> = {
             code: HttpStatus.OK.code,
