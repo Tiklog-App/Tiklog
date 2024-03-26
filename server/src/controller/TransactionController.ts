@@ -102,7 +102,7 @@ export default class TransactionController {
         });
 
         const data = initResponse.data.data;
-
+ 
         const txnValues: Partial<ITransactionModel> = {
             reference: data.reference,
             authorizationUrl: data.authorization_url,
@@ -254,10 +254,9 @@ export default class TransactionController {
         const findWallet = await datasources.walletDAOService.findByAny({
             customer: customer
         });
-
+        
         // create wallet/update wallet
         if(!findWallet) {
-
             const walletValue: Partial<IWalletModel> = {
                 balance: transaction.amount,
                 customer: customer
@@ -269,6 +268,7 @@ export default class TransactionController {
             await wallet.save();
         
         } else {
+            console.log(findWallet.balance, 'balance')
             const walletValue = {
                 balance: findWallet.balance + transaction.amount
             }

@@ -112,10 +112,10 @@ export default class AuthenticationController {
       const actualData = JSON.stringify(data);
 
       redisService.saveToken(value.phone, actualData, 180);
-      // redisService.sendNotification(
-      //   value.phone,
-      //   `Your token is: ${token}`
-      // )
+      redisService.sendNotification(
+        value.phone,
+        `Your token is: ${token}`
+      )
       
       const response: HttpResponse<any> = {
         code: HttpStatus.OK.code,
@@ -308,10 +308,10 @@ export default class AuthenticationController {
       const actualData = JSON.stringify(data);
 
       redisService.saveToken(value.phone, actualData, 180);
-      // redisService.sendNotification(
-      //   value.phone,
-      //   `Your token is: ${token}`
-      // )
+      redisService.sendNotification(
+        value.phone,
+        `Your token is: ${token}`
+      )
 
       const response: HttpResponse<any> = {
         code: HttpStatus.OK.code,
