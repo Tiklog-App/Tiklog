@@ -372,81 +372,87 @@ export default class UserController {
   private async doUpdateUser(req: Request): Promise<HttpResponse<IUserModel>> {
     return new Promise((resolve, reject) => {
         form.parse(req, async (err, fields, files) => {
-            const userId = req.params.userId;
+          //@ts-ignore
+          const userId = req.user._id;
 
-            const { error, value } = Joi.object<IUserModel>($updateUserSchema).validate(fields);
-            if(error) return reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
-            
-            const user = await datasources.userDAOService.findById(userId);
-            if(!user) return reject(CustomAPIError.response('User not found', HttpStatus.NOT_FOUND.code));
+          const { error, value } = Joi.object<IUserModel>($updateUserSchema).validate(fields);
+          if(error) return reject(CustomAPIError.response(error.details[0].message, HttpStatus.BAD_REQUEST.code));
+          
+          const user = await datasources.userDAOService.findById(userId);
+          if(!user) return reject(CustomAPIError.response('User not found', HttpStatus.NOT_FOUND.code));
 
 
-            const user_email = await datasources.userDAOService.findByAny({
-              email: value.email
-            });
-        
-            if(value.email && user.email !== value.email){
-                if(user_email) {
-                  return Promise.reject(CustomAPIError.response('User with this email already exists', HttpStatus.NOT_FOUND.code))
-                }
-            };
-        
-            const user_phone = await datasources.userDAOService.findByAny({
-              phone: value.phone
-            });
-        
-            if(value.phone && user.phone !== value.phone){
-                if(user_phone) {
-                  return Promise.reject(CustomAPIError.response('User with this phone number already exists', HttpStatus.NOT_FOUND.code))
-                }
-            };
+          const user_email = await datasources.userDAOService.findByAny({
+            email: value.email
+          });
+      
+          if(value.email && user.email !== value.email){
+              if(user_email) {
+                return reject(CustomAPIError.response('User with this email already exists', HttpStatus.NOT_FOUND.code))
+              }
+          };
+      
+          const user_phone = await datasources.userDAOService.findByAny({
+            phone: value.phone
+          });
+      
+          if(value.phone && user.phone !== value.phone){
+              if(user_phone) {
+                return reject(CustomAPIError.response('User with this phone number already exists', HttpStatus.NOT_FOUND.code))
+              }
+          };
 
+          if(value.role !== '') {
             const role = await datasources.roleDAOService.findByAny({
-              name: value.role
+              slug: Generic.generateSlug(value.role)
             });
             if(!role)
-              return Promise.reject(CustomAPIError.response("Role not found", HttpStatus.NOT_FOUND.code));
+              return reject(CustomAPIError.response("Role not found", HttpStatus.NOT_FOUND.code));
 
-            const profile_image = files.profileImageUrl as File;
-            const basePath = `${UPLOAD_BASE_PATH}/user`;
+            user.roles.splice(0, user.roles.length);
+            user.roles.push(role._id);
+            await user.save();
+          }
 
-            let _profileImageUrl = ''
-            if(profile_image) {
-                // File size validation
-                const maxSizeInBytes = MAX_SIZE_IN_BYTE
-                if (profile_image.size > maxSizeInBytes) {
-                    return reject(CustomAPIError.response(MESSAGES.image_size_error, HttpStatus.BAD_REQUEST.code));
-                }
-        
-                // File type validation
-                const allowedFileTypes = ALLOWED_FILE_TYPES;
-                if (!allowedFileTypes.includes(profile_image.mimetype as string)) {
-                    return reject(CustomAPIError.response(MESSAGES.image_type_error, HttpStatus.BAD_REQUEST.code));
-                }
-        
-                _profileImageUrl = await Generic.getImagePath({
-                  tempPath: profile_image.filepath,
-                  filename: profile_image.originalFilename as string,
-                  basePath,
-                });
-            };
+          const profile_image = files.profileImageUrl as File;
+          const basePath = `${UPLOAD_BASE_PATH}/user`;
 
-            const userValues = {
-                ...value,
-                profileImageUrl: profile_image && _profileImageUrl,
-                role: role._id
-            };
+          let _profileImageUrl = ''
+          if(profile_image) {
+              // File size validation
+              const maxSizeInBytes = MAX_SIZE_IN_BYTE
+              if (profile_image.size > maxSizeInBytes) {
+                  return reject(CustomAPIError.response(MESSAGES.image_size_error, HttpStatus.BAD_REQUEST.code));
+              }
+      
+              // File type validation
+              const allowedFileTypes = ALLOWED_FILE_TYPES;
+              if (!allowedFileTypes.includes(profile_image.mimetype as string)) {
+                  return reject(CustomAPIError.response(MESSAGES.image_type_error, HttpStatus.BAD_REQUEST.code));
+              }
+      
+              _profileImageUrl = await Generic.getImagePath({
+                tempPath: profile_image.filepath,
+                filename: profile_image.originalFilename as string,
+                basePath,
+              });
+          };
 
-            const updatedUser = await datasources.userDAOService.updateByAny(
-                {_id: userId},
-                userValues
-            );
-            
-            //@ts-ignore
-            return resolve(updatedUser);
+          const userValues = {
+              ...value,
+              profileImageUrl: profile_image && _profileImageUrl
+          };
+
+          const updatedUser = await datasources.userDAOService.updateByAny(
+              {_id: user._id},
+              userValues
+          );
+          
+          //@ts-ignore
+          return resolve(updatedUser);
         })
     })
-}
+  }
 
   private async doChangePassword(req: Request) {
       const userId = req.params.userId;

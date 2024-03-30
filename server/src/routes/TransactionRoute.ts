@@ -40,6 +40,12 @@ export const getTransactionsHandler = authenticateRouteWrapper(async (req, res) 
     res.status(response.code).json(response);
 });
 
+export const getAllRiderTransactionsHandler = authenticateRouteWrapper(async (req, res) => {
+    const response = await transactionController.getAllRiderTransactions(req);
+
+    res.status(response.code).json(response);
+});
+
 export const getTransactionByRefHandler = authenticateRouteWrapper(async (req, res) => {
     const response = await transactionController.getTransactionsByRef(req);
 

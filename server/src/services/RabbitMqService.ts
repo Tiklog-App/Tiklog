@@ -18,6 +18,7 @@ import AppLogger from '../utils/AppLogger';
 import CustomAPIError from '../exceptions/CustomAPIError';
 import HttpStatus from '../helpers/HttpStatus';
 import datasources from  '../services/dao';
+import RiderTransactions, { IRiderTransactionsModel } from '../models/RiderTransactions';
 
 const logger = AppLogger.init('server').logger;
 const redisService = new RedisService();
@@ -376,7 +377,15 @@ class RabbitMqService {
         await datasources.riderWalletDAOService.create(walletValues as any)
       }
 
-      //saves the admin charges for the delivery
+      //save rider transaction history
+      await datasources.riderTransactionsDAOService.create({
+        rider: riderId,
+        customer: data.customerId,
+        type: 'credit',
+        amount: riderFee
+      } as IRiderTransactionsModel)
+
+      //save the admin charges for the delivery
       await datasources.adminFeeDAOService.create({
         deliveryRefNumber: deliveryRefNumber,
         rider: riderId,

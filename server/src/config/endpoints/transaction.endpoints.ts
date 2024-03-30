@@ -3,6 +3,7 @@ import RouteEndpoints = appCommonTypes.RouteEndpoints;
 import {
     addToWalletHandler,
     fetchPaymentRequestHandler,
+    getAllRiderTransactionsHandler,
     getCustomerTransactionsHandler,
     getCustomerWalletHandler,
     getRiderTransactionsHandler,
@@ -47,6 +48,12 @@ const transactionEndpoints: RouteEndpoints = [
         method: 'get',
         path: '/transactions/rider',
         handler: getRiderTransactionsHandler
+    },
+    {
+        name: 'get all rider transactions',
+        method: 'get',
+        path: '/all-rider-transactions',
+        handler: getAllRiderTransactionsHandler
     },
     {
         name: 'get transactions',

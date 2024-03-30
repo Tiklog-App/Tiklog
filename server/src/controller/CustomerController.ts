@@ -915,7 +915,7 @@ export default class CustomerController {
                 const customerValues = {
                     ...value,
                     email: _email ? _email : customer.email,
-                    profileImageUrl: profile_image && _profileImageUrl,
+                    profileImageUrl: _profileImageUrl ? _profileImageUrl : '',
                     phone: _phone ? _phone : customer.phone,
                     level: 2,
                     dob: new Date(value.dob)

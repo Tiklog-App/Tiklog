@@ -15,6 +15,7 @@ import { CUSTOMER_PERMISSION, MAKE_PAYMENT, MANAGE_ALL, MANAGE_SOME, READ_ADMIN_
 import PaystackService from "../services/PaystackService";
 import Generic from "../utils/Generic";
 import RedisService from "../services/RedisService";
+import { IRiderTransactionsModel } from "../models/RiderTransactions";
 
 const redisService = new RedisService();
 const paystackService = new PaystackService();
@@ -456,7 +457,22 @@ export default class TransactionController {
         //@ts-ignore
         const riderId = req.user._id;
 
-        const transactions = await datasources.transactionDAOService.findAll({ rider: riderId });
+        const transactions = await datasources.riderTransactionsDAOService.findAll({ rider: riderId });
+
+        const response: HttpResponse<any> = {
+            code: HttpStatus.OK.code,
+            message: HttpStatus.OK.value,
+            results: transactions 
+        };
+
+        return Promise.resolve(response);
+    }
+
+    @TryCatch
+    @HasPermission([MANAGE_ALL, MANAGE_SOME, READ_TRANSACTION])
+    public async getAllRiderTransactions(req: Request) {
+
+        const transactions = await datasources.riderTransactionsDAOService.findAll({});
 
         const response: HttpResponse<any> = {
             code: HttpStatus.OK.code,
@@ -737,6 +753,14 @@ export default class TransactionController {
                     { _id: paymentReq._id },
                     { status: PAYMENT_DONE }
                 );
+
+
+                await datasources.riderTransactionsDAOService.create({
+                    rider: rider._id,
+                    customer: null,
+                    type: 'debit',
+                    amount: paymentReq.amountRequested
+                } as IRiderTransactionsModel)
 
                 //Send notification to rider phone as text
                 if(paid) {

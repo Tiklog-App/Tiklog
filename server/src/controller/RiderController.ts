@@ -1154,7 +1154,7 @@ export default class RiderController {
                 const riderValues = {
                     ...value,
                     email: _email ? _email : rider.email,
-                    profileImageUrl: profile_image && _profileImageUrl,
+                    profileImageUrl: _profileImageUrl ? _profileImageUrl : '',
                     phone: _phone ? _phone : rider.phone
                 };
 

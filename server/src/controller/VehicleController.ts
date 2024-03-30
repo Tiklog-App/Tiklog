@@ -374,7 +374,7 @@ export default class VehicleController {
 
                 const vehicleValues: Partial<IVehicleModel> = {
                     ...value,
-                    vehicleImageUrl: vehicle_image && _vehicleImageUrl,
+                    vehicleImageUrl: _vehicleImageUrl ? _vehicleImageUrl : '',
                     rider: riderId,
                     slug: Generic.generateSlug(value.vehicleName)
                 };
@@ -432,7 +432,7 @@ export default class VehicleController {
 
                 const vehicleValues: Partial<IVehicleModel> = {
                     ...value,
-                    vehicleImageUrl: vehicle_image && _vehicleImageUrl,
+                    vehicleImageUrl: _vehicleImageUrl ? _vehicleImageUrl : '',
                     slug: Generic.generateSlug(value.vehicleName)
                 };
 

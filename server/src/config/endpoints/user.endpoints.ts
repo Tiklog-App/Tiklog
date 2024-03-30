@@ -23,7 +23,7 @@ const userEndpoints: RouteEndpoints = [
     {
         name: 'update user',
         method: 'put',
-        path: '/user-update/:userId',
+        path: '/user-update',
         handler: updateUserHandler
     },
     {

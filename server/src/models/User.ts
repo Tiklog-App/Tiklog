@@ -17,7 +17,7 @@ interface IUser {
   loginDate: Date | null;
   roles: mongoose.Types.ObjectId[];
   role: string;
-  slug: string | null;
+  // slug: string | null;
   passwordResetCode: string | null;
 }
 
@@ -34,14 +34,14 @@ const userSchema = new Schema<IUser>({
   loginToken: { type: String, allowNull: true },
   loginDate: { type: Date, allowNull: true },
   roles: [{ type: Schema.Types.ObjectId, ref: 'Role' }],
-  slug: { type: String, allowNull: true },
+  // slug: { type: String, allowNull: true },
   passwordResetCode: { type: String, allowNull: true }
 });
 
-userSchema.pre('find', function (next) {
+userSchema.pre(['find', 'findOne'], function (next) {
   this.populate({
     path: 'roles',
-    select: '_id name slug permissions'
+    select: '_id name permissions'
   });
   next();
 });

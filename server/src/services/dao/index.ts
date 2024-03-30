@@ -23,6 +23,7 @@ import TikLogDocsRepository from "../../repositories/TikLogDocsRepository";
 import FAQRepository from "../../repositories/FAQRepository";
 import ChatMessageRepository from "../../repositories/ChatMessageRepository";
 import ChatRepository from "../../repositories/ChatRepository";
+import RiderTransactionsRepository from "../../repositories/RiderTransactionsRepository";
 
 import PermissionDAOService from "./PermissionDAOService";
 import RoleDAOService from "./RoleDAOService";
@@ -49,6 +50,7 @@ import TikLogDocsDAOService from "./TikLogDocsDAOService";
 import FAQDAOService from "./FAQDAOService";
 import ChatDAOService from "./ChatDAOService";
 import ChatMessageDAOService from "./ChatMessageDAOService";
+import RiderTransactionsDAOService from "./RiderTransactionsDAOService";
 
 const permissionRepository = new PermissionRepository();
 const roleRepository = new RoleRepository();
@@ -75,6 +77,7 @@ const tikLogDocsRepository = new TikLogDocsRepository();
 const faqRepository = new FAQRepository();
 const chatMessageRepository = new ChatMessageRepository();
 const chatRepository = new ChatRepository();
+const riderTransactionsRepository = new RiderTransactionsRepository();
 
 const permissionDAOService = new PermissionDAOService(permissionRepository);
 const roleDAOService = new RoleDAOService(roleRepository);
@@ -101,9 +104,11 @@ const tikLogDocsDAOService = new TikLogDocsDAOService(tikLogDocsRepository);
 const faqDAOService = new FAQDAOService(faqRepository);
 const chatMessageDAOService = new ChatMessageDAOService(chatMessageRepository);
 const chatDAOService = new ChatDAOService(chatRepository);
+const riderTransactionsDAOService = new RiderTransactionsDAOService(riderTransactionsRepository);
 
 export default {
     chatMessageDAOService,
+    riderTransactionsDAOService,
     chatDAOService,
     vehicleDAOService,
     vehicleNameDAOService,

@@ -5,7 +5,7 @@ import BankRepository from '../../repositories/BankRepository';
 import { appModelTypes } from '../../@types/app-model';
 import ICrudDAO = appModelTypes.ICrudDAO;
 
-export default class WalletDAOService implements ICrudDAO<IBankModel> {
+export default class BankDAOService implements ICrudDAO<IBankModel> {
   private bankRepository: BankRepository;
 
   constructor(bankRepository: BankRepository) {
