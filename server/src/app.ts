@@ -19,7 +19,11 @@ export const corsOptions = {
     'http://127.0.0.1:5173',
     'http://127.0.0.1:5174',
     'http://localhost:3001',
-    <string>process.env.CLIENT_URL
+    <string>process.env.CLIENT_URL,
+    'http://45.132.242.119',
+    'http://45.132.242.119:8044',
+    'http://45.132.242.119:8045',
+    'http://45.132.242.119:8046'
   ],
   credentials: true,
 };
